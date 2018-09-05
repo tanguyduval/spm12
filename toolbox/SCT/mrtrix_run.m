@@ -22,12 +22,14 @@ switch name
     case 'dwi2tensor'
         out.o = fullfile(job.ofolder,'diffusiontensor.nii.gz');    
         options = [job.i{1} ' ' out.o{1} ' -force '];        
+        job = rmfield(job,{'i','ofolder'});
         
         job.fslgrad = [job.fslgrad.bvecs{1} ' ' job.fslgrad.bvals{1}];
 
     case 'dwipreproc'
+        if isstruct(job.pe_dir), job.pe_dir = job.pe_dir.PhaseEncodingAxis; end
         out.o = fullfile(job.ofolder,[filename '_preproc.nii.gz']);    
-        options = [job.i{1} ' ' out.o{1} ' -force -rpe_none -pe_dir j -eddy_options " --data_is_shelled"'];        
+        options = [job.i{1} ' ' out.o{1} ' -force -rpe_none -eddy_options " --data_is_shelled"'];        
         
         % export corrected bvecs
         [~,filebvec] = fileparts(job.fslgrad.bvecs{1});
@@ -38,6 +40,25 @@ switch name
         % add fslgrad input
         job.fslgrad = [job.fslgrad.bvecs{1} ' ' job.fslgrad.bvals{1}];
         job = rmfield(job,{'i','ofolder'});
+    case 'tensor2metric'
+        met = {'adc','fa','ad','rd','vector'};
+        if ~exist(fullfile(job.ofolder{1},'tensorfit'),'dir')
+            mkdir(fullfile(job.ofolder{1},'tensorfit'));
+        end
+        for imet = 1:length(met)
+            job.(met{imet}) = fullfile(job.ofolder,'tensorfit',[met{imet} '.nii.gz']);
+            out.(met{imet}) = job.(met{imet});
+        end
+        out.o = out.adc;
+        options = [job.i{1} ' -force '];        
+        job = rmfield(job,{'i','ofolder'});
+        
+    case 'dwi2mask'
+        out.o = fullfile(job.ofolder,'mask.nii.gz');    
+        options = [job.i{1} ' ' out.o{1} ' -force '];        
+        job = rmfield(job,{'i','ofolder'});
+        
+        job.fslgrad = [job.fslgrad.bvecs{1} ' ' job.fslgrad.bvals{1}];
 end
     
 %% Append options -flag to the command call
@@ -50,4 +71,9 @@ end
 
 %% Call Command
 disp(['<strong>' name ' ' options '</strong>'])
-system([name ' ' options])
+if exist(out.o{1},'file')
+    disp(['<strong>output file already exists, assuming that the processing was already done... skipping</strong>'])
+    disp(['Delete output file to restart this job = ' out.o{1}])
+else
+    system([name ' ' options])
+end

@@ -11,6 +11,16 @@ input.ufilter = '.*\.nii(\.gz)';
 input.num     = [1 1];
 input.preview = @(f) spm_image('Display',char(f));
 
+%--------------------------------------------------------------------------
+% mask mask Image
+%--------------------------------------------------------------------------
+mask         = cfg_files;
+mask.tag     = 'mask';
+mask.name    = 'mask image';
+mask.help    = {'This is the mask image.'};
+mask.ufilter = '.*\.nii(\.gz)';
+mask.num     = [1 1];
+mask.preview = @(f) spm_image('Display',char(f));
 
 %--------------------------------------------------------------------------
 % output dir
@@ -86,7 +96,7 @@ dwibiascorrect.vout = @sct_run_vout;
 dwi2tensor         = cfg_exbranch;
 dwi2tensor.tag     = 'dwi2tensor';
 dwi2tensor.name    = 'dwi2tensor';
-dwi2tensor.val     = {input fslgrad dir};
+dwi2tensor.val     = {input mask fslgrad dir};
 dwi2tensor.help    = {'Diffusion (kurtosis) tensor estimation using iteratively reweighted linear'
                       '  least squares estimator'
                       'The tensor coefficients are stored in the output image as follows:'
@@ -104,16 +114,54 @@ dwi2tensor.vout = @sct_run_vout;
 %--------------------------------------------------------------------------
 % preproc dwipreproc
 %--------------------------------------------------------------------------
+pedir              = cfg_entry;
+pedir.tag          = 'pe_dir';
+pedir.name         = 'Phase encoding direction';
+pedir.help         = {
+                    'Automatically extracted from dwi metadata (PhaseEncodingAxis field)'
+                    'OR'
+                    'Manually specify the phase encoding direction of the input series; can be a'
+                    '  signed axis number (e.g. -0, 1, +2), an axis designator (e.g. RL, PA, IS),'
+                    '  or NIfTI axis codes (e.g. i-, j, k)'
+                    }';
+                
 dwipreproc         = cfg_exbranch;
 dwipreproc.tag     = 'preproc';
 dwipreproc.name    = 'dwipreproc';
-dwipreproc.val     = {input fslgrad dir};
+dwipreproc.val     = {input fslgrad dir pedir};
 dwipreproc.help    = {
     'Perform diffusion image pre-processing using FSL''s eddy tool; including'
     '  inhomogeneity distortion correction using FSL''s topup tool if possible'
     }';
 dwipreproc.prog = @(job) mrtrix_run('dwipreproc',job);
 dwipreproc.vout = @sct_run_vout;
+
+%--------------------------------------------------------------------------
+% tensor2metric tensor2metric
+%--------------------------------------------------------------------------
+
+tensor2metric         = cfg_exbranch;
+tensor2metric.tag     = 'tensor2metric';
+tensor2metric.name    = 'tensor2metric';
+tensor2metric.val     = {input mask dir};
+tensor2metric.help    = {
+    'Generate maps of tensor-derived parameters'
+    }';
+tensor2metric.prog = @(job) mrtrix_run('tensor2metric',job);
+tensor2metric.vout = @sct_run_vout;
+
+%--------------------------------------------------------------------------
+% tensor2metric tensor2metric
+%--------------------------------------------------------------------------
+dwi2mask         = cfg_exbranch;
+dwi2mask.tag     = 'dwi2mask';
+dwi2mask.name    = 'dwi2mask';
+dwi2mask.val     = {input dir fslgrad};
+dwi2mask.help    = {
+    'Generate maps of tensor-derived parameters'
+    }';
+dwi2mask.prog = @(job) mrtrix_run('dwi2mask',job);
+dwi2mask.vout = @sct_run_vout;
 
 %--------------------------------------------------------------------------
 % mrtrix MRtrix3
@@ -125,4 +173,4 @@ mrtrix.name    = 'MRtrix3';
 mrtrix.help    = {
     'Advanced tools for the analysis of diffusion MRI data'
     }';
-mrtrix.values  = {dwidenoise dwibiascorrect dwipreproc dwi2tensor};
+mrtrix.values  = {dwidenoise dwibiascorrect dwipreproc dwi2tensor tensor2metric dwi2mask};
