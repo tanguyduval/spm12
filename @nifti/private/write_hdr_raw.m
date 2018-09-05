@@ -11,8 +11,19 @@ function sts = write_hdr_raw(fname,hdr,be)
 
 %
 % $Id: write_hdr_raw.m 7147 2017-08-03 14:07:01Z spm $
-
-
+isgzip=false;
+if strcmp(fname(end-6:end),'.nii.gz')
+    isgzip = true;
+    if spm_existfile(fname)
+        tmpDir = tempname;
+        mkdir(tmpDir);
+        [pathtmp, nametmp, exttmp] = fileparts(fname);
+        fname = gunzip(fname,tmpDir);
+        fname = char(fname);	% convert from cell to string
+    else
+        fname = fname(1:end-3);
+    end
+end
 [pth,nam] = fileparts(fname);
 if isempty(pth), pth = pwd; end
 
@@ -81,6 +92,15 @@ if sts
     fclose(fp);
 end
 
+if isgzip
+    fnametmp = fname;
+    fname = gzip(fname,pathtmp);
+    fname = fname{1};
+    delete(fnametmp)
+    if exist('tmpDir','var')
+        rmdir(tmpDir,'s');
+    end
+end
 if ~sts
      fprintf('There was a problem writing to the header of\n');
      fprintf('  "%s"\n', fname);

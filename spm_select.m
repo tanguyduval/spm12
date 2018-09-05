@@ -114,7 +114,7 @@ if nargin && ischar(varargin{1}) && any(strcmpi(varargin{1},local_cmds))
             % Regexp based filters without special handlers
             cfg_getfile('regfilter', 'mesh',  {'\.gii$'});
             cfg_getfile('regfilter', 'gifti', {'\.gii$'});
-            cfg_getfile('regfilter', 'nifti', {'\.nii(\.gz)$','\.img$'});
+            cfg_getfile('regfilter', 'nifti', {'\.nii(\.gz)?$','\.img$'});
             % Filter for 3D images that handles frame expansion
             frames = cfg_entry;
             frames.name    = 'Frames';
@@ -123,7 +123,7 @@ if nargin && ischar(varargin{1}) && any(strcmpi(varargin{1},local_cmds))
             frames.num     = [1 Inf];
             frames.val     = {1};
             cfg_getfile('regfilter', 'image',...
-                {'.*\.nii(\.gz)(,\d+){0,2}$','.*\.img(,\d+){0,2}$'},...
+                {'.*\.nii(\.gz)?(,\d+){0,2}$','.*\.img(,\d+){0,2}$'},...
                 false, @spm_select_image, {frames});
             
         case 'expand'

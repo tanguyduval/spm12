@@ -32,7 +32,12 @@ function V = create_vol(V)
 %--------------------------------------------------------------------------
 if ~isfield(V,'fname'), error('Missing field "fname".'); end
 V.fname  = deblank(V.fname);
-
+if strcmp(V.fname(end-6:end),'.nii.gz')
+    isgzip = true;
+    V.fname = V.fname(1:end-3);
+else
+    isgzip = false;
+end
 %-Field 'dim'
 %--------------------------------------------------------------------------
 if ~isfield(V,'dim'), error('Missing field "dim".'); end
@@ -113,7 +118,11 @@ N.descrip = V.descrip;
 %try, N.timing = V.private.timing; end
 
 try
-    N0  = nifti(V.fname);
+    if isgzip
+        N0  = nifti([V.fname '.gz']);
+    else
+        N0  = nifti(V.fname);
+    end
 
     % Just overwrite if both are single volume files.
     tmp = [N0.dat.dim ones(1,5)];
@@ -209,3 +218,8 @@ end
 
 create(N);
 V.private = N;
+if isgzip
+    fnametmp = V.fname;
+    V.fname = gzip(V.fname,fileparts(V.fname));
+    delete(fnametmp)
+end

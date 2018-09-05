@@ -39,6 +39,9 @@ case 1
         
         
         if exist('gzfname', 'var')
+            fname  = deblank(varargin{1});
+            vol.hname = fname;
+            vol.iname = fname;
             rmdir(tmpDir,'s');
         end
 
