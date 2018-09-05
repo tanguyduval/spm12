@@ -1684,6 +1684,12 @@ while ~isempty(cjid2subs)
             % no cached outputs (module did not run or it does not return
             % outputs) - run job
             cfg_message('matlabbatch:run:modstart', 'Running ''%s''', cm.name);
+            dblist = dbstatus;
+            if strcmp(dblist(end).identifier,'all') % make dbstop if error work
+                cm = cfg_run_cm(cm, subsref(mlbch, cfg2jobsubs(job.cjrun, cjid2subsrun{k})));
+                csdeps{k} = cm.sdeps;
+                cfg_message('matlabbatch:run:moddone', 'Done    ''%s''', cm.name);
+            else
             try
                 cm = cfg_run_cm(cm, subsref(mlbch, cfg2jobsubs(job.cjrun, cjid2subsrun{k})));
                 csdeps{k} = cm.sdeps;
@@ -1699,6 +1705,7 @@ while ~isempty(cjid2subs)
                 str = cfg_disp_error(le);
                 cfg_message('matlabbatch:run:modfailed', 'Failed  ''%s''', cm.name);
                 cfg_message('matlabbatch:run:modfailed', '%s\n', str{:});
+            end
             end
             % save results (if any) into job tree
             job.cjrun = subsasgn(job.cjrun, cjid2subsrun{k}, cm);

@@ -699,6 +699,10 @@ function MenuFileRun_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 local_pointer('watch');
 udmodlist = get(handles.modlist, 'userdata');
+dblist = dbstatus;
+if strcmp(dblist(end).identifier,'all') % make dbstop if error work
+    cfg_util('run',udmodlist(1).cjob);
+else
 try
     cfg_util('run',udmodlist(1).cjob);
 catch
@@ -721,6 +725,7 @@ catch
         end;
     end
 end;
+end
 local_pointer('arrow');
 
 % --------------------------------------------------------------------
