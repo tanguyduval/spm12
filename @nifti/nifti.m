@@ -22,9 +22,25 @@ case 1
             h = nifti(cellstr(varargin{1}));
             return;
         end
+        
         fname  = deblank(varargin{1});
+        if strcmp(fname(end-6:end), '.nii.gz')
+         tmpDir = tempname;
+         mkdir(tmpDir);
+         gzfname = fname;
+         copyfile(fname,tmpDir)
+         [pathtmp, nametmp, exttmp] = fileparts(fname);
+         fname = gunzip(fullfile(tmpDir,[nametmp,exttmp]));
+         fname = char(fname);	% convert from cell to string
+        end
+        
         vol    = read_hdr(fname);
         extras = read_extras(fname);
+        
+        
+        if exist('gzfname', 'var')
+            rmdir(tmpDir,'s');
+        end
 
         if ~isfield(vol.hdr,'magic')
             vol.hdr = mayo2nifti1(vol.hdr);
