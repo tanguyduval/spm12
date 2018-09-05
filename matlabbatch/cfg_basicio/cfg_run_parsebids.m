@@ -9,26 +9,53 @@ function out = cfg_run_parsebids(job)
 
 % Tanguy Duval
 
-
+% CALL BIDS_PARSER
 BIDS = bids_parser(job.parent{1});
+
+% TEST IF BIDS
 if isempty(BIDS.subjects)
     out = [];
     return
 end
-out.bidsdir         = {BIDS.path};
+
+% SELECT CURRENT SUBJECT
 SCAN = BIDS.subjects(job.bids_ses);
+
+% ADD OUTPUT DIRECTORIES
+out.bidsdir         = {BIDS.path};
 out.bidsderivatives = fullfile(out.bidsdir,'derivatives','test',SCAN.name,SCAN.session);
-mkdir(out.bidsderivatives{1})
-% MODALITY = SCAN.anat(strcmp({SCAN.anat.modality},'T1w'));
-% out.T1w = fullfile(SCAN.path,'anat',MODALITY.filename);
-% MODALITY = SCAN.func(strcmp({SCAN.func.modality},'bold'));
-% out.bold = fullfile(SCAN.path,'func',MODALITY.filename);
-list = {'anat','T1w','anat','T2w','anat', 'FLAIR','func','bold','dwi','dwi'};
+if ~exist(out.bidsderivatives{1},'dir')
+    mkdir(out.bidsderivatives{1})
+end
+
+% LOOP OVER MODALITIES AND EXTRACT PATIENT DATA FILENAME AND METADATA
+list = {'anat','T1w',...
+        'anat','T2w',...
+        'anat', 'FLAIR',...
+        'func','bold',...
+        'dwi','dwi'...
+        };
+    
 for ii=1:2:length(list)
     if isfield(SCAN,list{ii})
         MODALITY = SCAN.(list{ii})(strcmp({SCAN.(list{ii}).modality},list{ii+1}));
         if ~isempty(MODALITY)
-            out.([list{ii} '_' list{ii+1}]) = {strrep(fullfile(SCAN.path,list{ii},MODALITY(1).filename),'.gz','')};
+            % Add nifti
+            nii_fname = fullfile(SCAN.path,list{ii},MODALITY(1).filename);
+            tag = [list{ii} '_' list{ii+1}];
+            out.(tag) = {nii_fname};
+            
+            % Special treatment for dmri
+            if strcmp(list{ii},'dwi')
+                out.dwi_bvec = {strrep(strrep(nii_fname,'.gz',''),'.nii','.bvec')};
+                out.dwi_bval = {strrep(strrep(nii_fname,'.gz',''),'.nii','.bval')};
+            end
+            
+            % Add metadata
+            if isfield(MODALITY(1),'meta') && ~isempty(MODALITY(1).meta)
+                tag = [tag '_meta'];
+                out.(tag) = MODALITY(1).meta;
+            end
         end
     end
 end
