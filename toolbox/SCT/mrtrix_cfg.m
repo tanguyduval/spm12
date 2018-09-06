@@ -134,7 +134,7 @@ dwipreproc.help    = {
     '  inhomogeneity distortion correction using FSL''s topup tool if possible'
     }';
 dwipreproc.prog = @(job) mrtrix_run('dwipreproc',job);
-dwipreproc.vout = @sct_run_vout;
+dwipreproc.vout = @mrtrix_vout_dwipreproc;
 
 %--------------------------------------------------------------------------
 % tensor2metric tensor2metric
@@ -148,10 +148,10 @@ tensor2metric.help    = {
     'Generate maps of tensor-derived parameters'
     }';
 tensor2metric.prog = @(job) mrtrix_run('tensor2metric',job);
-tensor2metric.vout = @sct_run_vout;
+tensor2metric.vout = @mrtrix_vout_tensor2metric;
 
 %--------------------------------------------------------------------------
-% tensor2metric tensor2metric
+% dwi2mask dwi2mask
 %--------------------------------------------------------------------------
 dwi2mask         = cfg_exbranch;
 dwi2mask.tag     = 'dwi2mask';
@@ -174,3 +174,24 @@ mrtrix.help    = {
     'Advanced tools for the analysis of diffusion MRI data'
     }';
 mrtrix.values  = {dwidenoise dwibiascorrect dwipreproc dwi2tensor tensor2metric dwi2mask};
+
+function dep = mrtrix_vout_dwipreproc(job)
+dep = cfg_dep;
+dep(1).sname      = sprintf('output file');
+dep(1).src_output = substruct('.','o');
+dep(1).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
+dep(2).sname      = sprintf('corrected bvec file');
+dep(2).src_output = substruct('.','bvecs');
+dep(2).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
+dep(3).sname      = sprintf('corrected bval file');
+dep(3).src_output = substruct('.','bvals');
+dep(3).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
+
+function dep = mrtrix_vout_tensor2metric(job)
+met = {'adc','fa','ad','rd','vector'};
+dep = cfg_dep;
+for imet = 1:length(met)
+    dep(imet).sname      = sprintf([met{imet} ' file']);
+    dep(imet).src_output = substruct('.',met{imet});
+    dep(imet).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
+end
