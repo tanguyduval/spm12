@@ -19,11 +19,13 @@ if isempty(BIDS.subjects)
 end
 
 % SELECT CURRENT SUBJECT
-SCAN = BIDS.subjects(job.bids_ses);
+
+SCAN = BIDS.subjects(min(end,job.bids_ses));
 
 % ADD OUTPUT DIRECTORIES
 out.bidsdir         = {BIDS.path};
-out.bidsderivatives = fullfile(out.bidsdir,'derivatives','test',SCAN.name,SCAN.session);
+if strcmp(job.name,'<UNDEFINED>'), job.name = 'test'; end
+out.bidsderivatives = fullfile(out.bidsdir,'derivatives','matlabbatch',['sub-' SCAN.name],['ses-' SCAN.session],job.name);
 if ~exist(out.bidsderivatives{1},'dir')
     mkdir(out.bidsderivatives{1})
 end
@@ -36,9 +38,21 @@ list = {'anat','T1w',...
         'dwi','dwi'...
         };
     
+mods = setdiff(fieldnames(SCAN),{'name','path','session'});
+list = {};
+for imods = 1:length(mods)
+    for ifile = 1:length(SCAN.(mods{imods}))
+        list{end+1} = mods{imods};
+        if isfield(SCAN.(mods{imods}),'modality') && ~isempty(SCAN.(mods{imods})(ifile).modality)
+            list{end+1} = SCAN.(mods{imods})(ifile).modality;
+        else
+            list{end+1} = regexprep(SCAN.(mods{imods})(ifile).filename,'\.nii(\.gz)?','');
+        end
+    end
+end
+
 for ii=1:2:length(list)
-    if isfield(SCAN,list{ii})
-        MODALITY = SCAN.(list{ii})(strcmp({SCAN.(list{ii}).modality},list{ii+1}));
+        MODALITY = SCAN.(list{ii})(strcmp({SCAN.(list{ii}).modality},list{ii+1}) | strcmp(regexprep({SCAN.(list{ii}).filename},'\.nii(\.gz)?',''),list{ii+1}));
         if ~isempty(MODALITY)
             % Add nifti
             nii_fname = fullfile(SCAN.path,list{ii},MODALITY(1).filename);
@@ -57,5 +71,4 @@ for ii=1:2:length(list)
                 out.(tag) = MODALITY(1).meta;
             end
         end
-    end
 end

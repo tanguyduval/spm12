@@ -26,14 +26,15 @@ dep(2).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
 
 if strcmp(job.parent,'<UNDEFINED>')
     job.parent = {[mfilename('fullpath') '_template']};  
+    job.bids_ses = 1;
+    job.name   = {'mrtrix_preproc'};
 end
-try
-    out = cfg_run_parsebids(job);
-catch
-    job.parent = {[mfilename('fullpath') '_template']};  
-    out = cfg_run_parsebids(job);
+if strcmp(job.bids_ses,'<UNDEFINED>')
+    job.bids_ses = 1;
 end
+out = cfg_run_parsebids(job);
 
+if isempty(out), return; end
 for ff = setdiff(fieldnames(out)',{'bidsdir','bidsderivatives'})
     dep(end+1)            = cfg_dep;
     dep(end).sname      = strrep(strrep(ff{1},'_meta',' metadata'),'_',': ');
