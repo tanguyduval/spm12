@@ -7,12 +7,12 @@ filename = strrep(filename,'.nii','');
 %% parse options.
 switch name
     case 'dwidenoise'
-        out.o = fullfile(job.ofolder,[filename '_denoise.nii.gz']);    
+        out.o = fullfile(job.ofolder,[filename '_denoise.nii']);    
         options = [job.i{1} ' ' out.o{1} ' -force '];        
         job.noise = fullfile(job.ofolder,'noisemap.nii.gz');
         job = rmfield(job,{'i','ofolder'});
     case 'dwibiascorrect'
-        out.o = fullfile(job.ofolder,[filename '_biascorrect.nii.gz']);    
+        out.o = fullfile(job.ofolder,[filename '_biascorrect.nii']);    
         options = [job.i{1} ' ' out.o{1} ' -force '];        
         job.bias = 'b1bias.nii.gz';
         job = rmfield(job,{'i','ofolder'});
@@ -20,7 +20,7 @@ switch name
         job.fslgrad = [job.fslgrad.bvecs{1} ' ' job.fslgrad.bvals{1}];
         
     case 'dwi2tensor'
-        out.o = fullfile(job.ofolder,'diffusiontensor.nii.gz');    
+        out.o = fullfile(job.ofolder,'diffusiontensor.nii');    
         options = [job.i{1} ' ' out.o{1} ' -force '];        
         job = rmfield(job,{'i','ofolder'});
         
@@ -28,7 +28,7 @@ switch name
 
     case 'dwipreproc'
         if isstruct(job.pe_dir), job.pe_dir = job.pe_dir.PhaseEncodingAxis; end
-        out.o = fullfile(job.ofolder,[filename '_preproc.nii.gz']);    
+        out.o = fullfile(job.ofolder,[filename '_preproc.nii']);    
         options = [job.i{1} ' ' out.o{1} ' -force -rpe_none -eddy_options " --data_is_shelled"'];        
         
         % export corrected bvecs
@@ -49,7 +49,6 @@ switch name
             job.(met{imet}) = fullfile(job.ofolder,'tensorfit',[met{imet} '.nii.gz']);
             out.(met{imet}) = job.(met{imet});
         end
-        out.o = out.adc;
         options = [job.i{1} ' -force '];        
         job = rmfield(job,{'i','ofolder'});
         
@@ -75,5 +74,6 @@ if exist(out.o{1},'file')
     disp(['<strong>output file already exists, assuming that the processing was already done... skipping</strong>'])
     disp(['Delete output file to restart this job = ' out.o{1}])
 else
-    system([name ' ' options])
+    [status, cmd]=system([name ' ' options]);
+    if status, error(cmd); end
 end
