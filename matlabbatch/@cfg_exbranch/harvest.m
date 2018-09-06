@@ -124,8 +124,9 @@ else
     if ochange && ~isempty(item.sdeps)
         % delete changed outputs from dependent modules
         sdeps = item.sdeps;
-        item.sdeps = [];
-        cj = del_in_target(sdeps, cj);
+        rm = ~ismember({sdeps.sname},{item.sout.sname});
+        item.sdeps = sdeps(~rm);
+        cj = del_in_target(sdeps(rm), cj);
         % invalidate already computed outputs
         item.jout = cfg_inv_out;
     end;
