@@ -24,10 +24,25 @@ dep(2).sname      = sprintf('BIDS output path for derivatives');
 dep(2).src_output = substruct('.','bidsderivatives');
 dep(2).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
 
+dep(3)            = cfg_dep;
+dep(3).sname      = sprintf('Subject Name');
+dep(3).src_output = substruct('.','sub');
+dep(3).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
+
+dep(4)            = cfg_dep;
+dep(4).sname      = sprintf('Session Name');
+dep(4).src_output = substruct('.','ses');
+dep(4).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
+
+dep(5)            = cfg_dep;
+dep(5).sname      = sprintf('sub-NAME/ses-SESSION');
+dep(5).src_output = substruct('.','relpath');
+dep(5).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
+
 if strcmp(job.parent,'<UNDEFINED>')
     job.parent = {[mfilename('fullpath') '_template']};  
     job.bids_ses = 1;
-    job.name   = {'mrtrix_preproc'};
+    job.name   = {'matlabbatch_test'};
 end
 if strcmp(job.bids_ses,'<UNDEFINED>')
     job.bids_ses = 1;
@@ -35,7 +50,7 @@ end
 out = cfg_run_parsebids(job);
 
 if isempty(out), return; end
-for ff = setdiff(fieldnames(out)',{'bidsdir','bidsderivatives'})
+for ff = setdiff(fieldnames(out)',{'bidsdir','bidsderivatives','sub','ses','relpath'})
     dep(end+1)            = cfg_dep;
     dep(end).sname      = strrep(strrep(ff{1},'_meta',' metadata'),'_',': ');
     dep(end).src_output = substruct('.',ff{1});

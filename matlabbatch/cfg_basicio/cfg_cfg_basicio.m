@@ -88,10 +88,12 @@ bidssession.num     = [1 1];
 % ---------------------------------------------------------------------
 % cfg_parsebids Parse BIDS Directory
 % ---------------------------------------------------------------------
+parentbids            = parent;
+parentbids.preview    = @(parent) cfg_preview_parsebids(parent);
 cfg_parsebids         = cfg_exbranch;
 cfg_parsebids.tag     = 'cfg_parsebids';
 cfg_parsebids.name    = 'Parse BIDS Directory';
-cfg_parsebids.val     = {parent, bidssession name};
+cfg_parsebids.val     = {parentbids, bidssession name};
 cfg_parsebids.help    = {'Parse a BIDS directory.'};
 cfg_parsebids.prog    = @cfg_run_parsebids;
 cfg_parsebids.vout    = @cfg_vout_parsebids;
