@@ -8,7 +8,10 @@ function out = cfg_run_parsebids(job)
 %_______________________________________________________________________
 
 % Tanguy Duval
-
+if ~exist('bids_parser','file')
+    addpath(fullfile(spm('dir'),'external','bids_tools_matlab'))
+    addpath(genpath(fullfile(spm('dir'),'external','bids_tools_matlab','External')))
+end
 % CALL BIDS_PARSER
 BIDS = bids_parser(job.parent{1});
 
@@ -52,6 +55,7 @@ for imods = 1:length(mods)
         else
             SCAN.(mods{imods})(ifile).modality = 'unknown';
             list{end+1} = regexprep(SCAN.(mods{imods})(ifile).filename,'\.nii(\.gz)?','');
+            SCAN.(mods{imods})(ifile).modality = [];
         end
     end
 end

@@ -1685,7 +1685,8 @@ while ~isempty(cjid2subs)
             % outputs) - run job
             cfg_message('matlabbatch:run:modstart', 'Running ''%s''', cm.name);
             dblist = dbstatus;
-            if strcmp(dblist(end).identifier,'all') % make dbstop if error work
+
+            if ~isempty(dblist) && ~isempty(dblist(end).identifier) && strcmp(dblist(end).identifier,'all') % make dbstop if error work
                 cm = cfg_run_cm(cm, subsref(mlbch, cfg2jobsubs(job.cjrun, cjid2subsrun{k})));
                 csdeps{k} = cm.sdeps;
                 cfg_message('matlabbatch:run:moddone', 'Done    ''%s''', cm.name);
