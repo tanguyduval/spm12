@@ -27,6 +27,10 @@ SCAN = BIDS.subjects(min(end,job.bids_ses));
 
 % ADD OUTPUT DIRECTORIES
 out.bidsdir         = {BIDS.path};
+out.sub             = SCAN.name;
+out.ses             = SCAN.session;
+out.relpath         = fullfile(['sub-' SCAN.name],['ses-' SCAN.session]);
+
 if strcmp(job.name,'<UNDEFINED>'), job.name = 'test'; end
 out.bidsderivatives = fullfile(out.bidsdir,'derivatives','matlabbatch',['sub-' SCAN.name],['ses-' SCAN.session],job.name);
 if ~exist(out.bidsderivatives{1},'dir')
@@ -41,7 +45,7 @@ list = {'anat','T1w',...
         'dwi','dwi'...
         };
     
-mods = setdiff(fieldnames(SCAN),{'name','path','session'});
+mods = setdiff(fieldnames(SCAN),{'name','path','session','tsv'});
 list = {};
 for imods = 1:length(mods)
     for ifile = 1:length(SCAN.(mods{imods}))
@@ -49,6 +53,7 @@ for imods = 1:length(mods)
         if isfield(SCAN.(mods{imods}),'modality') && ~isempty(SCAN.(mods{imods})(ifile).modality)
             list{end+1} = SCAN.(mods{imods})(ifile).modality;
         else
+            SCAN.(mods{imods})(ifile).modality = 'unknown';
             list{end+1} = regexprep(SCAN.(mods{imods})(ifile).filename,'\.nii(\.gz)?','');
             SCAN.(mods{imods})(ifile).modality = [];
         end
