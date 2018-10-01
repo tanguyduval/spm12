@@ -8,7 +8,10 @@ function out = cfg_run_parsebids(job)
 %_______________________________________________________________________
 
 % Tanguy Duval
-
+if ~exist('bids_parser','file')
+    addpath(fullfile(spm('dir'),'external','bids_tools_matlab'))
+    addpath(genpath(fullfile(spm('dir'),'external','bids_tools_matlab','External')))
+end
 % CALL BIDS_PARSER
 BIDS = bids_parser(job.parent{1});
 
