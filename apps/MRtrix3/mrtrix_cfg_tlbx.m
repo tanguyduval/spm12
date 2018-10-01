@@ -1,4 +1,4 @@
-function mrtrix = mrtrix_cfg
+function mrtrix = mrtrix_cfg_tlbx
 
 %--------------------------------------------------------------------------
 % input input Image
@@ -121,9 +121,10 @@ pedir.help         = {
                     'Automatically extracted from dwi metadata (PhaseEncodingAxis field)'
                     'OR'
                     'Manually specify the phase encoding direction of the input series; can be a'
-                    '  signed axis number (e.g. -0, 1, +2), an axis designator (e.g. RL, PA, IS),'
+                    '  an axis designator (e.g. RL, PA, IS),'
                     '  or NIfTI axis codes (e.g. i-, j, k)'
                     }';
+pedir.strtype      = 's';
                 
 dwipreproc         = cfg_exbranch;
 dwipreproc.tag     = 'preproc';

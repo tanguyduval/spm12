@@ -70,7 +70,7 @@ end
 
 %% Call Command
 disp(['<strong>' name ' ' options '</strong>'])
-if exist(out.o{1},'file')
+if isfield(out,'o') && exist(out.o{1},'file')
     disp(['<strong>output file already exists, assuming that the processing was already done... skipping</strong>'])
     disp(['Delete output file to restart this job = ' out.o{1}])
 else

@@ -47,6 +47,7 @@ for imods = 1:length(mods)
             list{end+1} = SCAN.(mods{imods})(ifile).modality;
         else
             list{end+1} = regexprep(SCAN.(mods{imods})(ifile).filename,'\.nii(\.gz)?','');
+            SCAN.(mods{imods})(ifile).modality = [];
         end
     end
 end
@@ -55,7 +56,7 @@ for ii=1:2:length(list)
         MODALITY = SCAN.(list{ii})(strcmp({SCAN.(list{ii}).modality},list{ii+1}) | strcmp(regexprep({SCAN.(list{ii}).filename},'\.nii(\.gz)?',''),list{ii+1}));
         if ~isempty(MODALITY)
             % Add nifti
-            nii_fname = fullfile(SCAN.path,list{ii},MODALITY(1).filename);
+            nii_fname = fullfile(SCAN.path,strrep(list{ii},'image',''),MODALITY(1).filename);
             tag = [list{ii} '_' list{ii+1}];
             out.(tag) = {nii_fname};
             

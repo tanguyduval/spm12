@@ -4,8 +4,8 @@
 % cfg_basicio BasicIO - Unknown
 % mrtrix MRtrix3 - Unknown
 %-----------------------------------------------------------------------
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.parent = '<UNDEFINED>';
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = '<UNDEFINED>';
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.parent = '/Users/Tanguy/data/bricks_GBM_seg_qc';
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = 1;
 matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.name = 'mrtrix';
 matlabbatch{2}.mrtrix.denoise.i(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
 matlabbatch{2}.mrtrix.denoise.ofolder(1) = cfg_dep('Parse BIDS Directory: BIDS output path for derivatives', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
@@ -35,7 +35,7 @@ matlabbatch{7}.spm.spatial.coreg.estwrite.other(4) = cfg_dep('tensor2metric: vec
 matlabbatch{7}.spm.spatial.coreg.estwrite.eoptions.cost_fun = 'nmi';
 matlabbatch{7}.spm.spatial.coreg.estwrite.eoptions.sep = [4 2];
 matlabbatch{7}.spm.spatial.coreg.estwrite.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
-matlabbatch{7}.spm.spatial.coreg.estwrite.eoptions.fwhm = [7 7];
+matlabbatch{7}.spm.spatial.coreg.estwrite.eoptions.fwhm = '<UNDEFINED>';
 matlabbatch{7}.spm.spatial.coreg.estwrite.roptions.interp = 4;
 matlabbatch{7}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
 matlabbatch{7}.spm.spatial.coreg.estwrite.roptions.mask = 0;
