@@ -168,6 +168,7 @@ switch action
         if ~isdeployed
             addpath(fullfile(spm('Dir'),'matlabbatch'));
             addpath(fullfile(spm('Dir'),'config'));
+            addpath(genpath(fullfile(spm('Dir'),'apps')));
         end
         try
             spm_select('init');
