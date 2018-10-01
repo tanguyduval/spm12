@@ -700,7 +700,7 @@ function MenuFileRun_Callback(hObject, eventdata, handles)
 local_pointer('watch');
 udmodlist = get(handles.modlist, 'userdata');
 dblist = dbstatus;
-if strcmp(dblist(end).identifier,'all') % make dbstop if error work
+if ~isempty(dblist) && ~isempty(dblist(end).identifier) && strcmp(dblist(end).identifier,'all') % make dbstop if error work
     cfg_util('run',udmodlist(1).cjob);
 else
 try
