@@ -1,4 +1,44 @@
+EXTENDED EDITION
+Toulouse Neuromaging Center - Inserm - UMR 1214
+Tanguy Duval
 
+## Use spm12
+#### CMD:  
+help of the first layer (standalone binary):
+````
+docker run -it -v C:\Users\TONIC\code\spm12:/spm --entrypoint "/spm/spm_standalone_linux/run_spm12.sh" spm12 /opt/mcr/v92 -h
+````
+help of second layer (bids_app)
+````
+docker run -it -v C:\Users\TONIC\Documents\code\spm12:/spm12 -v F:\STEMRI_NIFTI_RAW:/bids --entrypoint "/spm12/spm_standalone_linux/run_spm12.sh" spm12 /opt/mcr/v92 script /spm12/spm_BIDS_App.m -h
+````
+run a config  
+````
+docker run -it -v C:\Users\TONIC\code\spm12:/spm12 -v F:\STEMRI_NIFTI_RAW:/bids --entrypoint "/spm12/spm_standalone_linux/run_spm12.sh" spm12 /opt/mcr/v92 script /spm12/spm_BIDS_App.m /bids /bids/derivatives participant --config /spm12/apps/MRtrix3/mrtrix_example.m --skip-bids-validator
+````
+
+#### GUI:
+install Xserveur (Xming on windows)
+````
+export IP = ???
+docker run -it -v C:\Users\code\spm12:/spm12 --entrypoint "/spm12/spm_standalone_linux/run_spm12.sh" -e DISPLAY=$IP:0 spm12 /opt/mcr/v92 eval cfg_ui
+````
+
+## Compile spm12 using a docker with matlab compiled in it
+````
+docker run -it -v C:\Users\code\spm12:/spm12 --entrypoint "/spm_make_standalone.sh" myrepo/matlab
+````
+with
+spm_make_standalone.sh : 
+````
+#!/bin/sh
+# script for spm12 deployement
+rm -rf /spm12/spm_standalone_linux
+mkdir /spm12/spm_standalone_linux
+/usr/local/MATLAB/R2017a/bin/matlab -nodesktop -nosplash -r "addpath('/spm12'); cd('/spm12/config'); spm_make_standalone('/spm12/spm_standalone_linux')"
+````
+
+````matlab
 %   ___  ____  __  __
 %  / __)(  _ \(  \/  )  
 %  \__ \ )___/ )    (   Statistical Parametric Mapping
@@ -143,3 +183,4 @@
 % % Copyright (C) 1991,1994-2017 Wellcome Trust Centre for Neuroimaging
 % 
 % $Id: README.txt 6980 2017-01-04 10:10:29Z guillaume $
+````
