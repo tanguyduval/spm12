@@ -74,6 +74,6 @@ if isfield(out,'o') && exist(out.o{1},'file')
     disp(['<strong>output file already exists, assuming that the processing was already done... skipping</strong>'])
     disp(['Delete output file to restart this job = ' out.o{1}])
 else
-    [status, cmd]=system([name ' ' options]);
+    [status, cmd]=system([name ' ' options],'-echo');
     if status, error(cmd); end
 end

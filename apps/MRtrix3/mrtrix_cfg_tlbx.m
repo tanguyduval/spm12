@@ -124,7 +124,6 @@ pedir.help         = {
                     '  an axis designator (e.g. RL, PA, IS),'
                     '  or NIfTI axis codes (e.g. i-, j, k)'
                     }';
-pedir.strtype      = 's';
                 
 dwipreproc         = cfg_exbranch;
 dwipreproc.tag     = 'preproc';

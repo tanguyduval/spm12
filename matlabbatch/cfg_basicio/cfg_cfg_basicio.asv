@@ -1390,18 +1390,18 @@ cmd.num     = [1  Inf];
 % call_system Call System command
 % ---------------------------------------------------------------------
 outputssystem       = cfg_repeat;
+outputssystem       = inputs;
 outputssystem.tag   = 'outputs';
 outputssystem.name  = 'Outputs';
-outputssystem.help  = {'Assemble the outputs to the called function in their correct order.'};
-outputssystem.values       = {string};
-outputssystem.num          = [0 Inf];
-outputssystem.forcestruct  = true;
+outputssystem.help  = {'Assemble the onputs to the called function in their correct order.'};
+inputs.values       = {evaluated string anyfile images directory };
+inputs.num          = [0 Inf];
+inputs.forcestruct  = true;
+
 call_system         = cfg_exbranch;
 call_system.tag     = 'call_system';
-call_system.name    = 'Call System command';
-directory.name    = 'Ouput Directory';
-directory.tag     = 'odir';
-call_system.val     = {inputs directory outputssystem cmd };
+call_system.name    = 'Call System command (e.g. FSL, Freesurfer)';
+call_system.val     = {inputs outputssystem cmd };
 call_system.prog = @(job)cfg_run_call_system('run',job);
 call_system.vout = @(job)cfg_run_call_system('vout',job);
 
