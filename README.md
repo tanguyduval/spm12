@@ -18,11 +18,23 @@ docker run -it -v C:\Users\TONIC\code\spm12:/spm12 -v F:\STEMRI_NIFTI_RAW:/bids 
 ````
 
 #### GUI:
-install Xserveur (Xming on windows)
+###### Windows
+1. install Xserveur (Xming on windows)
+2. 
 ````
 export IP = ???
-docker run -it -v C:\Users\code\spm12:/spm12 --entrypoint "/spm12/spm_standalone_linux/run_spm12.sh" -e DISPLAY=$IP:0 spm12 /opt/mcr/v92 eval cfg_ui
+docker run -it -v C:\Users\TONIC\data\ds001378:bids -v C:\Users\TONIC\code\spm12:/spm12 --entrypoint "/spm12/spm_standalone_linux/run_spm12.sh" -e DISPLAY=$IP:0 spm12 /opt/mcr/v92 eval cfg_ui
 ````
+
+###### MacOs
+1. Install Xquartz
+2. Determine your IP `IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')`
+3. Add your IP to Xquartz `xhost + $IP`
+4. 
+````
+docker run -it -v /Users/TONIC/data/ds001378:bids /Users/TONIC/code/spm12 --entrypoint "/spm12/spm_standalone_linux/run_spm12.sh" -e DISPLAY=$IP:0 spm12 /opt/mcr/v92 eval cfg_ui
+````
+
 
 ## Compile spm12 using a docker with matlab compiled in it
 ````
