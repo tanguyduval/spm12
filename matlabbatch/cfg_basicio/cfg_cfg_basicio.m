@@ -73,6 +73,31 @@ cfg_mkdir.val     = {parent name };
 cfg_mkdir.help    = {'Create a new directory.'};
 cfg_mkdir.prog = @cfg_run_mkdir;
 cfg_mkdir.vout = @cfg_vout_mkdir;
+
+% ---------------------------------------------------------------------
+% scan scan number
+% ---------------------------------------------------------------------
+bidssession         = cfg_entry;
+bidssession.tag     = 'bids_ses';
+bidssession.name    = 'BIDS session';
+bidssession.val     = {1};
+bidssession.help    = {'Scanning session to process. 1 = first session of first subject'};
+bidssession.strtype = 'n';
+bidssession.num     = [1 1];
+
+% ---------------------------------------------------------------------
+% cfg_parsebids Parse BIDS Directory
+% ---------------------------------------------------------------------
+parentbids            = parent;
+parentbids.preview    = @(parent) cfg_preview_parsebids(parent);
+cfg_parsebids         = cfg_exbranch;
+cfg_parsebids.tag     = 'cfg_parsebids';
+cfg_parsebids.name    = 'Parse BIDS Directory';
+cfg_parsebids.val     = {parentbids, bidssession name};
+cfg_parsebids.help    = {'Parse a BIDS directory.'};
+cfg_parsebids.prog    = @cfg_run_parsebids;
+cfg_parsebids.vout    = @cfg_vout_parsebids;
+
 % ---------------------------------------------------------------------
 % dir Directory to move/copy/delete
 % ---------------------------------------------------------------------
@@ -173,7 +198,7 @@ dir_ops         = cfg_choice;
 dir_ops.tag     = 'dir_ops';
 dir_ops.name    = 'Dir Operations';
 dir_ops.help    = {''};
-dir_ops.values  = {cfg_cd cfg_mkdir dir_move cfg_named_dir };
+dir_ops.values  = {cfg_cd cfg_mkdir cfg_parsebids dir_move cfg_named_dir };
 % ---------------------------------------------------------------------
 % files Files to move/copy/delete
 % ---------------------------------------------------------------------
