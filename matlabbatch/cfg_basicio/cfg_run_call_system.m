@@ -49,17 +49,23 @@ if ischar(cmd)
         case 'run'
             job = local_getjob(varargin{1});
             % do computation, return results in variable out
-            in  = cell(size(job.inputs));
+            in     = cell(size(job.inputs));
+            inhelp = cell(size(job.inputs));
             for k = 1:numel(in)
                 in{k} = job.inputs{k}.(char(fieldnames(job.inputs{k})));
+                inhelp{k} = in{k}.help;
+                in{k} = in{k}.(char(setdiff(fieldnames(in{k}),'help')));
             end
             out.outputs = cell(size(job.outputs));
             out.outputs = job.outputs;
-            alreadyexist = true;
-
+            if ~isempty(job.outputs)
+                alreadyexist = true;
             for io = 1:length(job.outputs)
-                out.outputs{io} = {fullfile(job.odir{1},job.outputs{io}.string)};
+                out.outputs{io} = {fullfile(job.outputs{io}.outputs.directory{1},job.outputs{io}.outputs.string)};
                 alreadyexist = alreadyexist & exist(out.outputs{io}{1},'file');
+            end
+            else
+                alreadyexist = false;
             end
             if alreadyexist
                 disp(['<strong>output file already exists, assuming that the processing was already done... skipping</strong>'])
@@ -67,11 +73,12 @@ if ischar(cmd)
             else
                 cmd = job.cmd;
                 for ii=1:length(in)
-                    cmd = strrep(cmd,[' ' sprintf('i%d',1)],[' ' in{ii}{1} ' ']);
+                    cmd = strrep(cmd,[' ' sprintf('i%d',ii)],[' ' in{ii}{1} ' ']);
                 end
                 for ii=1:length(out.outputs)
-                    cmd = strrep(cmd,[' ' sprintf('o%d',1)],[' ' out.outputs{ii}{1} ' ']);
+                    cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' out.outputs{ii}{1} ' ']);
                 end
+                disp(['Running terminal command: ' cmd])
                 [status, stdout]=system(cmd,'-echo');
                 if status, error(stdout); end
             end
@@ -107,42 +114,11 @@ if ischar(cmd)
             else
                 cfg_message('ischar:check', 'Subcmd must be a string.');
             end
-        case 'defaults'
-            if nargin == 2
-                varargout{1} = local_defs(varargin{1});
-            else
-                local_defs(varargin{1:2});
-            end
         otherwise
             cfg_message('unknown:cmd', 'Unknown command ''%s''.', cmd);
     end
 else
     cfg_message('ischar:cmd', 'Cmd must be a string.');
-end
-
-function varargout = local_defs(defstr, defval)
-persistent defs;
-if isempty(defs)
-    % initialise defaults
-end
-if ischar(defstr)
-    % construct subscript reference struct from dot delimited tag string
-    tags = textscan(defstr,'%s', 'delimiter','.');
-    subs = struct('type','.','subs',tags{1}');
-    try
-        cdefval = subsref(local_def, subs);
-    catch
-        cdefval = [];
-        cfg_message('defaults:noval', ...
-            'No matching defaults value ''%s'' found.', defstr);
-    end
-    if nargin == 1
-        varargout{1} = cdefval;
-    else
-        defs = subsasgn(defs, subs, defval);
-    end
-else
-    cfg_message('ischar:defstr', 'Defaults key must be a string.');
 end
 
 function job = local_getjob(job)
