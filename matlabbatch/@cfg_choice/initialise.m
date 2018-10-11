@@ -25,6 +25,11 @@ function item = initialise(item, val, dflag)
 
 rev = '$Rev: 4898 $'; %#ok
 
+% Make sure that full list is loaded if cfg_item tag contains special token
+if strfind(gettag(item),'SetDefaultValOnLoad')
+dflag=0;
+end
+
 if strcmp(val,'<UNDEFINED>')
     val = struct([]);
 end

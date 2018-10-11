@@ -24,6 +24,10 @@ function item = initialise(item, val, dflag)
 % $Id: initialise.m 4898 2012-09-05 13:40:16Z volkmar $
 
 rev = '$Rev: 4898 $'; %#ok
+% Make sure that full list is loaded if cfg_item tag contains special token
+if strfind(gettag(item),'SetDefaultValOnLoad')
+dflag=0;
+end
 
 if strcmp(val,'<DEFAULTS>')
     item = initialise_def(item, val, dflag);

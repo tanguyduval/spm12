@@ -124,7 +124,11 @@ else
     if ochange && ~isempty(item.sdeps)
         % delete changed outputs from dependent modules
         sdeps = item.sdeps;
-        rm = ~ismember({sdeps.sname},{item.sout.sname});
+        if isfield(item.sout,'sname')
+            rm = ~ismember({sdeps.sname},{item.sout.sname});
+        else
+            rm=true(1,length(sdeps));
+        end
         item.sdeps = sdeps(~rm);
         cj = del_in_target(sdeps(rm), cj);
         % invalidate already computed outputs

@@ -56,31 +56,73 @@ if ischar(cmd)
                 inhelp{k} = in{k}.help;
                 in{k} = in{k}.(char(setdiff(fieldnames(in{k}),'help')));
             end
+            
+            % DOCKERIFY
+            mountdir = '';
+            for k = 1:numel(in)
+                mountdir = [mountdir '-v ' fileparts(in{k}{1}) ':/i' num2str(k) ' '];
+                dockerinfname{k} = strrep(in{k}{1},[fileparts(in{k}{1}) filesep],['/i' num2str(k) '/']);
+            end
+            for k = 1:numel(job.outputs)
+                mountdir = [mountdir '-v ' job.outputs{k}.outputs.directory{1} ':/o' num2str(k) ' '];
+                dockerout{k} =  ['/o' num2str(k)];
+                dockeroutfname{k} = [dockerout{k} '/' job.outputs{k}.outputs.string];
+            end
+            
+            % Check if all outputs already exists
             out.outputs = cell(size(job.outputs));
             out.outputs = job.outputs;
             if ~isempty(job.outputs)
                 alreadyexist = true;
             for io = 1:length(job.outputs)
-                out.outputs{io} = {fullfile(job.outputs{io}.outputs.directory{1},job.outputs{io}.outputs.string)};
+                out.outputs{io} = {fullfile(job.outputs{k}.outputs.directory{1},job.outputs{io}.outputs.string)};
                 alreadyexist = alreadyexist & exist(out.outputs{io}{1},'file');
             end
             else
                 alreadyexist = false;
             end
+            
             if alreadyexist
                 disp(['<strong>output file already exists, assuming that the processing was already done... skipping</strong>'])
-                disp(['Delete output file to restart this job = ' out.outputs{1}{1}])
+                disp(['Delete output file to restart this job = ' dockeroutfname{1}])
             else
+                % Replace token i%d and o%d by filenames
                 cmd = job.cmd;
                 for ii=1:length(in)
-                    cmd = strrep(cmd,[' ' sprintf('i%d',ii)],[' ' in{ii}{1} ' ']);
+                    if isfield(job.usedocker,'dockerimg') 
+                        cmd = strrep(cmd,[' ' sprintf('i%d',ii)],[' ' dockerinfname{ii} ' ']);
+                    else
+                        cmd = strrep(cmd,[' ' sprintf('i%d',ii)],[' ' in{ii}{1} ' ']);
+                    end
                 end
-                for ii=1:length(out.outputs)
-                    cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' out.outputs{ii}{1} ' ']);
+                for ii=1:length(job.outputs)
+                    if isfield(job.usedocker,'dockerimg')
+                        cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' dockeroutfname{1} ' ']);
+                    else
+                        cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' out.outputs{io}{1} ' ']);
+                    end
                 end
-                disp(['Running terminal command: ' cmd])
-                [status, stdout]=system(cmd,'-echo');
+                
+                % RUN SYSTEM COMMAND
+                if ~isfield(job.usedocker,'dockerimg')
+                    disp(['Running terminal command: ' cmd])
+                    [status, stdout]=system(cmd,'-echo');
+                else % docker
+                    cmdcell = strsplit(cmd);
+                    cmddocker = ['docker run --entrypoint ' cmdcell{1} ' ' mountdir job.usedocker.dockerimg ' ' strjoin(cmdcell(2:end))];
+                    disp(['Running terminal command: ' cmddocker])
+                    [status, stdout]=system(cmddocker,'-echo');
+                end
                 if status, error(stdout); end
+                
+                
+                % gunzip output for FSL if .nii was used
+                for io=1:length(out.outputs)
+                    if ~exist(out.outputs{io}{1},'file') && exist([out.outputs{io}{1} '.gz'],'file')
+                        gunzip([out.outputs{io}{1} '.gz'])
+                        delete([out.outputs{io}{1} '.gz'])
+                    end
+                end
             end
             
             if nargout > 0
@@ -92,11 +134,13 @@ if ischar(cmd)
             dep = cfg_dep;
             dep = dep(false);
             % determine outputs, return cfg_dep array in variable dep
-            for k = 1:numel(job.outputs)
-                dep(k)            = cfg_dep;
-                dep(k).sname      = sprintf('Call System: output %d - %s', k, char(fieldnames(job.outputs{k})));
-                dep(k).src_output = substruct('.','outputs','{}',{k});
-                dep(k).tgt_spec   = cfg_findspec({{'filter', char(fieldnames(job.outputs{k}))}});
+            if isfield(job,'outputs')
+                for k = 1:numel(job.outputs)
+                    dep(k)            = cfg_dep;
+                    dep(k).sname      = sprintf('Call System: output %d - %s', k, char(fieldnames(job.outputs{k})));
+                    dep(k).src_output = substruct('.','outputs','{}',{k});
+                    dep(k).tgt_spec   = cfg_findspec({{'filter', char(fieldnames(job.outputs{k}))}});
+                end
             end
             varargout{1} = dep;
         case 'check'
@@ -125,3 +169,6 @@ function job = local_getjob(job)
 if ~isstruct(job)
     cfg_message('isstruct:job', 'Job must be a struct.');
 end
+if isfield(job,'inputs_SetDefaultValOnLoad'), job.inputs=job.inputs_SetDefaultValOnLoad; job = rmfield(job,'inputs_SetDefaultValOnLoad');   end
+if isfield(job,'outputs_SetDefaultValOnLoad'), job.outputs=job.outputs_SetDefaultValOnLoad; job = rmfield(job,'outputs_SetDefaultValOnLoad'); end
+if isfield(job,'usedocker_SetDefaultValOnLoad'), job.usedocker=job.usedocker_SetDefaultValOnLoad; job = rmfield(job,'usedocker_SetDefaultValOnLoad'); end

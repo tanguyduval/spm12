@@ -1265,46 +1265,6 @@ inputs.help    = {'Assemble the inputs to the called function in their correct o
 inputs.values  = {evaluated string anyfile images directory };
 inputs.num     = [0 Inf];
 inputs.forcestruct = true;
-%-----------------------------------------------------------------------
-% Help paragraph
-%-----------------------------------------------------------------------
-help_par         = cfg_entry;
-help_par.name    = 'Help Paragraph';
-help_par.val     = {''};
-help_par.tag     = 'help';
-help_par.strtype = 's';
-help_par.num     = [0 Inf];
-help_par.help    = {'Help paragraph.', 'Enter a string which will be formatted as a separate paragraph.'};
-% ---------------------------------------------------------------------
-% Inputs branch
-% ---------------------------------------------------------------------
-evaluatedbranch         = cfg_branch;
-evaluatedbranch.tag     = 'evaluatedbranch';
-evaluatedbranch.name    = 'Evaluated Input';
-evaluated2 = evaluated; evaluated2.name = 'value';
-evaluatedbranch.val     = {evaluated2 help_par};
-evaluatedbranch.help    = {'Detail this input'};
-stringbranch         = cfg_branch;
-stringbranch.tag     = 'stringbranch';
-stringbranch.name    = string.name;
-string2 = string; string2.name = 'value';
-stringbranch.val     = {string2 help_par};
-stringbranch.help    = {'Detail this input'};
-anyfilebranch         = cfg_branch;
-anyfilebranch.tag     = 'anyfilebranch';
-anyfilebranch.name    = 'anyfile Input';
-anyfile2 = anyfile; anyfile2.name = 'value';
-anyfilebranch.val     = {anyfile2 help_par};
-anyfilebranch.help    = {'Detail this input'};
-directorybranch         = cfg_branch;
-directorybranch.tag     = 'directorybranch';
-directorybranch.name    = 'directory Input';
-directory2 = directory; directory2.name = 'value';
-directorybranch.val     = {directory2 help_par};
-directorybranch.help    = {'Detail this input'};
-inputsbranch         = inputs;
-inputsbranch.values  = {evaluatedbranch stringbranch anyfilebranch directorybranch };
-
 % ---------------------------------------------------------------------
 % s String
 % ---------------------------------------------------------------------
@@ -1443,38 +1403,6 @@ call_matlab.name    = 'Call MATLAB function';
 call_matlab.val     = {inputs outputs fun };
 call_matlab.prog = @(job)cfg_run_call_matlab('run',job);
 call_matlab.vout = @(job)cfg_run_call_matlab('vout',job);
-% ---------------------------------------------------------------------
-% cmd Command to be called
-% ---------------------------------------------------------------------
-cmd         = cfg_entry;
-cmd.tag     = 'cmd';
-cmd.name    = 'Command to be called';
-cmd.strtype = 's';
-cmd.num     = [1  Inf];
-% ---------------------------------------------------------------------
-% call_system Call System command
-% ---------------------------------------------------------------------
-outputbranch        = cfg_branch;
-outputbranch.tag    = 'outputs';
-outputbranch.name   = 'Output file';
-outputbranch.help   = {'Assemble the outputs to the called function in their correct order.'};
-filename            = string;
-filename.name       = 'filename';
-outputbranch.val    = {directory filename help_par};
-outputssystem              = cfg_repeat;
-outputssystem.tag          = 'outputs';
-outputssystem.name         = 'Outputs';
-outputssystem.help         = {'Assemble the outputs to the called function in their correct order.'};
-outputssystem.values       = {outputbranch};
-outputssystem.num          = [0 Inf];
-outputssystem.forcestruct  = true;
-call_system         = cfg_exbranch;
-call_system.tag     = 'call_system';
-call_system.name    = 'Call System command';
-call_system.val  = {inputsbranch outputssystem cmd };
-call_system.prog = @(job)cfg_run_call_system('run',job);
-call_system.vout = @(job)cfg_run_call_system('vout',job);
-call_system.preview = @(job)cfg_run_call_system('preview',job);
 
 % ---------------------------------------------------------------------
 % run_ops Run
@@ -1483,7 +1411,7 @@ run_ops         = cfg_choice;
 run_ops.tag     = 'run_ops';
 run_ops.name    = 'Run';
 run_ops.help    = {''};
-run_ops.values  = {runjobs call_matlab call_system};
+run_ops.values  = {runjobs call_matlab cfg_cfg_call_system};
 % ---------------------------------------------------------------------
 % cfg_basicio BasicIO
 % ---------------------------------------------------------------------
