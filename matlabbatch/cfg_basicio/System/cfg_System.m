@@ -45,9 +45,29 @@ fsl.tag     = 'fsl';
 fsl.name    = 'FSL';
 fsl.values  = {eddy_correct };
 % ---------------------------------------------------------------------
+% rigid Rigid
+% ---------------------------------------------------------------------
+rigid         = cfg_cfg_call_system;
+rigid.tag     = 'rigid';
+rigid.name    = 'Rigid';
+% ---------------------------------------------------------------------
+% antsregistration antsRegistration
+% ---------------------------------------------------------------------
+antsregistration         = cfg_choice;
+antsregistration.tag     = 'antsregistration';
+antsregistration.name    = 'antsRegistration';
+antsregistration.values  = {rigid };
+% ---------------------------------------------------------------------
+% ants ANTS
+% ---------------------------------------------------------------------
+ants         = cfg_choice;
+ants.tag     = 'ants';
+ants.name    = 'ANTS';
+ants.values  = {antsregistration };
+% ---------------------------------------------------------------------
 % system System
 % ---------------------------------------------------------------------
 cfg         = cfg_choice;
 cfg.tag     = 'system';
 cfg.name    = 'System';
-cfg.values  = {mrtrix3 fsl };
+cfg.values  = {mrtrix3 fsl ants };
