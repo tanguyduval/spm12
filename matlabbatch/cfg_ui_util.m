@@ -403,11 +403,11 @@ switch lower(cmd)
         [id, stop, help] = cfg_util('listmod', ciid{:}, cfg_findspec, ...
             cfg_tropts(cfg_findspec,1,1,1,1,false), {'showdoc'});
         set(handles.helpbox, 'Value',1, 'ListboxTop',1, 'string',cfg_justify(handles.helpbox, help{1}{1}));
-        if contents{7} && ~isempty(contents{10})
+        if ~isempty(contents{10})
             set(findobj(fig,'-regexp', 'Tag','.*Preview$'), 'Visible','on', ...
                               'Enable','on');
         end
-
+        
     case 'valedit_editvalue'
         [ciid, itemname, val] = deal(varargin{1:3});
         [unused, unused, itemclass] = cfg_util('listmod', ciid{:}, cfg_findspec, ...
