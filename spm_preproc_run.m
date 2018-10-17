@@ -57,6 +57,17 @@ end
 function vout = run_job(job)
 
 vout = vout_job(job);
+try
+    paths = {vout.tiss(:).c};
+    rm = cell2mat(cellfun(@isempty,paths,'uni',0)'); paths(rm) = [];
+    paths = cellfun(@(x) x{1},paths,'uni',0)';
+    existpaths = cell2mat(cellfun(@(x) exist(x,'file'),paths,'uni',0));
+    if all(existpaths)
+        disp('files already exist. Skipping. Delete following files to rerun the processing: ')
+        disp(paths)
+        return
+    end
+end
 tpm  = strvcat(cat(1,job.tissue(:).tpm));
 tpm  = spm_load_priors8(tpm);
 
