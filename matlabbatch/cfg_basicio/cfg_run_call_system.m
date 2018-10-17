@@ -47,14 +47,25 @@ function varargout = cfg_run_call_system(cmd, varargin)
 if ischar(cmd)
     switch lower(cmd)
         case 'run'
-            job = local_getjob(varargin{1});
+            job = local_getjob(varargin{1},true);
             % do computation, return results in variable out
             in     = cell(size(job.inputs));
             inhelp = cell(size(job.inputs));
             for k = 1:numel(in)
-                in{k} = job.inputs{k}.(char(fieldnames(job.inputs{k})));
-                inhelp{k} = in{k}.help;
-                in{k} = in{k}.(char(setdiff(fieldnames(in{k}),'help')));
+                intmp = job.inputs{k}.(char(fieldnames(job.inputs{k})));
+                inhelp{k} = intmp.help;
+                intmp = intmp.(char(setdiff(fieldnames(intmp),'help')));
+
+                switch char(fieldnames(job.inputs{k}))
+                    case 'evaluatedbranch'
+                        in{k} = {char(string(intmp))};
+                    case 'anyfilebranch'
+                        in{k} = intmp;
+                    case 'stringbranch'
+                        in{k} = {char(intmp)};
+                    otherwise
+                        in{k} = {char(string(intmp))};
+                end
             end
             
             % DOCKERIFY
@@ -97,9 +108,9 @@ if ischar(cmd)
                 end
                 for ii=1:length(job.outputs)
                     if isfield(job.usedocker,'dockerimg')
-                        cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' dockeroutfname{1} ' ']);
+                        cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' dockeroutfname{ii} ' ']);
                     else
-                        cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' out.outputs{io}{1} ' ']);
+                        cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' out.outputs{ii}{1} ' ']);
                     end
                 end
                 
@@ -129,7 +140,7 @@ if ischar(cmd)
                 varargout{1} = out;
             end
         case 'vout'
-            job = local_getjob(varargin{1});
+            job = local_getjob(varargin{1},true);
             % initialise empty cfg_dep array
             dep = cfg_dep;
             dep = dep(false);
@@ -137,7 +148,8 @@ if ischar(cmd)
             if isfield(job,'outputs')
                 for k = 1:numel(job.outputs)
                     dep(k)            = cfg_dep;
-                    dep(k).sname      = sprintf('Call System: output %d - %s', k, char(fieldnames(job.outputs{k})));
+                    cmdstring = strsplit(job.cmd);
+                    dep(k).sname      = sprintf('%s: output %d - %s',cmdstring{1}, k, char(job.outputs{k}.outputs.string));
                     dep(k).src_output = substruct('.','outputs','{}',{k});
                     dep(k).tgt_spec   = cfg_findspec({{'filter', char(fieldnames(job.outputs{k}))}});
                 end
@@ -158,6 +170,127 @@ if ischar(cmd)
             else
                 cfg_message('ischar:check', 'Subcmd must be a string.');
             end
+        case 'save'
+            job = local_getjob(varargin{1},false);
+            cmdcell = strsplit(job.cmd);
+            % get user pref
+            prompt = {'Module name:'};
+            title = 'Save Command configuration';
+            dims = [1 35];
+            definput = {['System.',cmdcell{1}]};
+            answer = inputdlg(prompt,title,dims,definput);
+            if isempty(answer), return; end
+            tree = strsplit(answer{1},'.');
+            % create output dir
+            directory = fullfile(fileparts(mfilename('fullpath')),tree{1});
+            if ~exist(directory)
+                mkdir(directory);
+                new = true;
+            else
+                new = false;
+            end
+            
+            % generate cfg_mlbatch_appcfg
+            if ~exist(fullfile(directory,'cfg_mlbatch_appcfg.m'),'file')
+                new = true;
+            end
+            if new
+                fid = fopen(fullfile(directory,'cfg_mlbatch_appcfg.m'),'wt');
+                fprintf(fid, 'function [cfg, def] = cfg_mlbatch_appcfg(varargin)\n');
+                fprintf(fid, ...
+                    ['%% ''%s'' - MATLABBATCH cfg_util initialisation\n' ...
+                    '%% This MATLABBATCH initialisation file can be used to load application\n' ...
+                    '%%              ''%s''\n' ...
+                    '%% into cfg_util. This can be done manually by running this file from\n' ...
+                    '%% MATLAB command line or automatically when cfg_util is initialised.\n' ...
+                    '%% The directory containing this file and the configuration file\n' ...
+                    '%%              ''%s''\n' ...
+                    '%% must be in MATLAB''s path variable.\n' ...
+                    '%% Created at %s.\n\n'], ...
+                    tree{1}, tree{1}, ['cfg_' tree{1} '_def'], datestr(now, 31));
+                
+                fprintf(fid, 'if ~isdeployed\n');
+                fprintf(fid, '    %% Get path to this file and add it to MATLAB path.\n');
+                fprintf(fid, ['    %% If the configuration file is stored in another place, the ' ...
+                    'path must be adjusted here.\n']);
+                fprintf(fid, '    p = fileparts(mfilename(''fullpath''));\n');
+                fprintf(fid, '    addpath(p);\n');
+                fprintf(fid, 'end\n');
+                fprintf(fid, '%% run configuration main & def function, return output\n');
+                fprintf(fid, 'cfg = %s;\n', ['cfg_' tree{1}]);
+                
+                fprintf(fid, 'def = %s;\n',['cfg_' tree{1} '_def']);
+                
+                fclose(fid);
+            end
+            
+            % generate cfg_CML
+            cfg_new     = cfg_exbranch;
+            cfg_new.tag = genvarname(lower(tree{end}));
+            cfg_new.name = tree{end};
+            
+            jj=2;
+            if ~new
+                jobstr = fileread(fullfile(directory,['cfg_' tree{1} '.m']));
+                jobstr = strrep(jobstr,'cfg_cfg_call_system','cfg_exbranch');
+                fid = fopen(fullfile(directory,['cfg_' tree{1} '2.m']),'wt');
+                fprintf(fid,'%s',jobstr);
+                fclose(fid);
+                cfg = feval(['cfg_' tree{1} '2']);
+                delete(fullfile(directory,['cfg_' tree{1} '2.m']))
+                subs = {};
+                cfg_tmp = cfg;
+                for jj=2:length(tree)
+                    ind = cell2mat(cellfun(@(x) strcmpi(x.tag,tree{jj}), cfg_tmp.values,'uni',0));
+                    if any(ind)
+                        subs = [subs, {'.','values','{}',{find(ind,1)}}];
+                        cfg_tmp = subsref(cfg,substruct(subs{:}));
+                        if isa(cfg_tmp,'cfg_exbranch')
+                            warning([answer{1} ' already exists. Stop.']);
+                            return
+                        end
+                    else
+                        break
+                    end
+                end
+                subs = [subs, {'.','values','{}',{length(cfg_tmp.values)+1}}];
+                subs = substruct(subs{:});
+            end
+            
+            for ii=length(tree)-1:-1:(jj-1)
+                cfg_tmp         = cfg_choice;
+                cfg_tmp.tag     = genvarname(lower(tree{ii}));
+                cfg_tmp.name    = tree{ii};
+                cfg_tmp.values  = {cfg_new};
+                cfg_new = cfg_tmp;
+            end
+            if new
+                cfg = cfg_new;
+            else
+                cfg = subsasgn(cfg,subs,cfg_new.values{1});
+            end
+            jobstr = gencode(cfg);
+            jobstr = strrep(jobstr,'cfg_exbranch','cfg_cfg_call_system');
+            
+            %write
+            fid = fopen(fullfile(directory,['cfg_' tree{1} '.m']),'wt');
+            fprintf(fid, 'function cfg = %s(varargin)\n\n',['cfg_' tree{1}]);
+            fprintf(fid, '%s\n',jobstr{:});
+            fclose(fid);
+            
+            % generate cfg_CML_def
+            if new
+                fid = fopen(fullfile(directory,['cfg_' tree{1} '_def.m']),'wt');
+                fprintf(fid, 'function %s = cfg_%s_def\n',lower(tree{1}),tree{1});
+            else
+                fid = fopen(fullfile(directory,['cfg_' tree{1} '_def.m']),'a');
+            end
+            jobstr = gencode(job,strjoin(cellfun(@genvarname,lower(tree),'uni',0),'.'))';
+            fprintf(fid, '%s\n',jobstr{:});
+            fclose(fid);
+
+            addpath(directory)
+            disp(['files added in ' directory])
         otherwise
             cfg_message('unknown:cmd', 'Unknown command ''%s''.', cmd);
     end
@@ -165,10 +298,12 @@ else
     cfg_message('ischar:cmd', 'Cmd must be a string.');
 end
 
-function job = local_getjob(job)
+function job = local_getjob(job,rename)
 if ~isstruct(job)
     cfg_message('isstruct:job', 'Job must be a struct.');
 end
+if nargin>1 && rename
 if isfield(job,'inputs_SetDefaultValOnLoad'), job.inputs=job.inputs_SetDefaultValOnLoad; job = rmfield(job,'inputs_SetDefaultValOnLoad');   end
 if isfield(job,'outputs_SetDefaultValOnLoad'), job.outputs=job.outputs_SetDefaultValOnLoad; job = rmfield(job,'outputs_SetDefaultValOnLoad'); end
 if isfield(job,'usedocker_SetDefaultValOnLoad'), job.usedocker=job.usedocker_SetDefaultValOnLoad; job = rmfield(job,'usedocker_SetDefaultValOnLoad'); end
+end
