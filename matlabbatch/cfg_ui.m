@@ -507,7 +507,7 @@ cfg_onscreen(hObject);
 local_setmenu(handles.cfg_ui, [], @local_AddMod, true);
 
 % Check udmodlist
-if ~isempty(varargin) && exist(varargin{1},'file')
+if ~isempty(varargin) %&& exist(varargin{1},'file')
     udmodlist = local_init_udmodlist;
     udmodlist.cjob = cfg_util('initjob',varargin{1});
     set(handles.modlist, 'userdata', udmodlist);

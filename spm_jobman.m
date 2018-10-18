@@ -167,6 +167,7 @@ switch action
     case {'initcfg'}
         if ~isdeployed
             addpath(fullfile(spm('Dir'),'matlabbatch'));
+            addpath(genpath(fullfile(spm('Dir'),'matlabbatch','cfg_basicio')));
             addpath(fullfile(spm('Dir'),'config'));
         end
         try
