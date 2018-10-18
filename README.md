@@ -3,6 +3,13 @@ EXTENDED EDITION
 Toulouse Neuromaging Center - Inserm - UMR 1214
 Tanguy Duval
 
+## Documentation
+
+* [Installation](#install)
+* [Features](#features)
+	- [BIDS parser module: create a participant BIDS pipeline in just a minute](#bids-parser-module)
+	- [Generic System call (run FSL, ANTS, Freesurfer, ... or your own app)](#generic-system-call)
+  
 ## INSTALL
 
 `git clone --recurse-submodules https://github.com/tanguyduval/spm12.git`
@@ -14,7 +21,8 @@ addpath(genpath(fullfile(spm('Dir'),'matlabbatch','cfg_basicio')));
 ````
 
 ## FEATURES
-### 1. BIDS parser module: create a participant BIDS pipeline in just a minute 
+### BIDS parser module
+   *create a participant BIDS pipeline in just a minute*
   - download an example BIDS dataset: https://openneuro.org/datasets/ds001378/versions/00003
   - open the matlabbatch using command `cfg_ui`
   - **Add** a new module Parse BIDS
@@ -61,7 +69,8 @@ matlabbatch{4}.spm.util.disp.data(1) = cfg_dep('Smooth: Smoothed Images', substr
 cfg_ui(matlabbatch)
   ````
   
-### 2. Generic System call (run FSL, ANTS, Freesurfer, ... or your app)
+### Generic System call
+*(run FSL, ANTS, Freesurfer, ... or your own app)*
   - install and run docker (https://www.docker.com/get-started). highly recommanded. On windows you need windows 10. 
   - Download a 4D image https://openneuro.org/crn/datasets/ds001378/snapshots/00003/files/sub-control01:ses-01:dwi:sub-control01_ses-01_dwi.nii.gz
   - open the matlabbatch using command `cfg_ui`
