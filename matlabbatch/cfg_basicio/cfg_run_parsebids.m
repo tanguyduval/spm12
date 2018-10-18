@@ -8,13 +8,28 @@ function out = cfg_run_parsebids(job)
 %_______________________________________________________________________
 
 % Tanguy Duval
+persistent BIDSfolder
+if ~isempty(BIDSfolder)
+    alreadyparsed = strcmp({BIDSfolder.parent},job.parent{1});
+    if any(alreadyparsed)
+        BIDS = BIDSfolder(alreadyparsed).BIDS;
+    end
+end
 if ~exist('bids_parser','file')
     addpath(fullfile(spm('dir'),'external','bids_tools_matlab'))
     addpath(genpath(fullfile(spm('dir'),'external','bids_tools_matlab','External')))
 end
 % CALL BIDS_PARSER
-BIDS = bids_parser(job.parent{1});
-
+if ~exist('BIDS','var')
+    BIDS = bids_parser(job.parent{1});
+    BIDSfolder(end+1).parent=job.parent{1};
+    BIDSfolder(end).BIDS=BIDS;
+end
+% TEST IF SESSION SELECTED
+if ~isfield(job,'bids_ses')
+    out = BIDS;
+    return;
+end
 % TEST IF BIDS
 if isempty(BIDS.subjects)
     out = [];
