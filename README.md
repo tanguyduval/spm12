@@ -40,7 +40,8 @@ addpath(genpath(fullfile(spm('Dir'),'matlabbatch','cfg_basicio')));
   
   <img src="help/extended/fillGUNZIP.png" width="500">
   
-  - Add additional modules or just click **run**. Subject 1 session 1 will be processed.
+  - Add additional modules or just click **run**. Subject 1 session 1 will be processed.  
+  Results will be saved into `bidsfolder/derivatives/matlabbatch/sub-NAME/ses-SESSION/DWI/`
   - **Save** your single participant pipeline using the save icon and loop over your subjects/sessions
   ````matlab
   for isub=1:5
