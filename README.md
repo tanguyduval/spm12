@@ -3,7 +3,7 @@ Toulouse Neuromaging Center - Inserm - UMR 1214
 Tanguy Duval
 
 ## FEATURES
-## BIDS parser module: create a participant BIDS pipeline in just a minute 
+### 1. BIDS parser module: create a participant BIDS pipeline in just a minute 
   - download an example BIDS dataset: https://openneuro.org/datasets/ds001378/versions/00003
   - open the matlabbatch using command `cfg_ui`
   - **Add** a new module Parse BIDS
