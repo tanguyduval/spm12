@@ -1,6 +1,17 @@
+
 EXTENDED EDITION
 Toulouse Neuromaging Center - Inserm - UMR 1214
 Tanguy Duval
+
+## INSTALL
+
+`git clone --recurse-submodules https://github.com/tanguyduval/spm12.git`
+````matlab
+addpath pathtospm/spm12
+addpath(fullfile(spm('Dir'),'matlabbatch'));
+addpath(fullfile(spm('Dir'),'config'));
+addpath(genpath(fullfile(spm('Dir'),'matlabbatch','cfg_basicio')));
+````
 
 ## FEATURES
 ### 1. BIDS parser module: create a participant BIDS pipeline in just a minute 
@@ -21,7 +32,7 @@ Tanguy Duval
   
   <img src="help/extended/fillGUNZIP.png" width="500">
   
-  - Add your modules and click **run**. Subject 1 session 1 will be processed.
+  - Add additional modules or just click **run**. Subject 1 session 1 will be processed.
   - **Save** your single participant pipeline using the save icon and loop over your subjects/sessions
   ````matlab
   for isub=1:5
@@ -29,7 +40,7 @@ Tanguy Duval
   spm_jobman('run',matlabbatch)
   end
   ````
-  - **Share** your pipeline:
+  - **Share** your pipeline (copy paste to your Matlab command line):
   ````matlab
   % smooth diffusion data
 clear matlabbatch
@@ -45,9 +56,77 @@ matlabbatch{3}.spm.spatial.smooth.dtype = 0;
 matlabbatch{3}.spm.spatial.smooth.im = 0;
 matlabbatch{3}.spm.spatial.smooth.prefix = 's';
 matlabbatch{4}.spm.util.disp.data(1) = cfg_dep('Smooth: Smoothed Images', substruct('.','val', '{}',{3}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','files'));
+
+% open gui
+cfg_ui(matlabbatch)
   ````
   
-## Use spm12
+### 2. Generic System call (run FSL, ANTS, Freesurfer, ... or your app)
+  - install and run docker (https://www.docker.com/get-started). highly recommanded. On windows you need windows 10. 
+  - Download a 4D image https://openneuro.org/crn/datasets/ds001378/snapshots/00003/files/sub-control01:ses-01:dwi:sub-control01_ses-01_dwi.nii.gz
+  - open the matlabbatch using command `cfg_ui`
+  - **Add** a new module Parse BIDS
+  <img src="help/extended/addSYSTEM.png" width="500">
+  
+  - **Fill** the module as follows  
+       *Use Docker: docker images with preinstalled neuroimaging softwares can be found on https://hub.docker.com/   
+                   `bids/mrtrix3-connectome` includes ANTS MRtrix3 and FSL
+                   docker images will be automatically downloaded and inputs/output folders mounted  
+                   if you choose "NO", command will be run locally*  
+  <img src="help/extended/fillSYSTEM.png" width="500">
+   
+   - **RUN** the command using the green play button
+   - **Save** your preset module
+  <img src="help/extended/saveSYSTEM.png" width="500">
+  <img src="help/extended/savenameSYSTEM.png" width="300">
+  
+  - **Reload** modules
+````matlab
+cfg_util('initcfg')
+cfg_ui
+````
+
+  - **Use** your preset module in an other pipeline
+  <img src="help/extended/usesavedSYSTEM.png" width="500">
+
+  - Your preset is saved under `spm12\matlabbatch\cfg_basicio\System`  
+    in `cfg_System_def.m` you have your preset values  
+````matlab
+system.fsl.fslmaths.tmean.inputs_SetDefaultValOnLoad{1}.anyfilebranch.help = '4D image (NIFTI)';
+system.fsl.fslmaths.tmean.inputs_SetDefaultValOnLoad{1}.anyfilebranch.anyfile = '<UNDEFINED>';
+system.fsl.fslmaths.tmean.outputs_SetDefaultValOnLoad{1}.outputs.help = 'time-averaged image';
+system.fsl.fslmaths.tmean.outputs_SetDefaultValOnLoad{1}.outputs.directory = '<UNDEFINED>';
+system.fsl.fslmaths.tmean.outputs_SetDefaultValOnLoad{1}.outputs.string = 'dwi_mean.nii';
+system.fsl.fslmaths.tmean.cmd = 'fslmaths i1 -Tmean o1';
+system.fsl.fslmaths.tmean.usedocker_SetDefaultValOnLoad.dockerimg = 'bids/mrtrix3_connectome';
+  ````
+in `cfg_System.m` you have the menu description for the GUI  
+````matlab
+% ---------------------------------------------------------------------
+% fslmaths fslmaths
+% ---------------------------------------------------------------------
+fslmaths         = cfg_choice;
+fslmaths.tag     = 'fslmaths';
+fslmaths.name    = 'fslmaths';
+fslmaths.values  = {tmean };
+% ---------------------------------------------------------------------
+% fsl FSL
+% ---------------------------------------------------------------------
+fsl         = cfg_choice;
+fsl.tag     = 'fsl';
+fsl.name    = 'FSL';
+fsl.values  = {eddy_correct fslmaths };
+% ---------------------------------------------------------------------
+% system System
+% ---------------------------------------------------------------------
+cfg         = cfg_choice;
+cfg.tag     = 'system';
+cfg.name    = 'System';
+cfg.values  = {mrtrix3 fsl ants };
+````
+  
+
+## Use spm12 standalone (no matlab). Not ready yet...
 #### CMD:  
 help of the first layer (standalone binary):
 ````
