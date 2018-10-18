@@ -40,7 +40,7 @@ addpath(genpath(fullfile(spm('Dir'),'matlabbatch','cfg_basicio')));
   spm_jobman('run',matlabbatch)
   end
   ````
-  - **Share** your pipeline:
+  - **Share** your pipeline (copy paste to your Matlab command line):
   ````matlab
   % smooth diffusion data
 clear matlabbatch
@@ -56,6 +56,9 @@ matlabbatch{3}.spm.spatial.smooth.dtype = 0;
 matlabbatch{3}.spm.spatial.smooth.im = 0;
 matlabbatch{3}.spm.spatial.smooth.prefix = 's';
 matlabbatch{4}.spm.util.disp.data(1) = cfg_dep('Smooth: Smoothed Images', substruct('.','val', '{}',{3}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','files'));
+
+% open gui
+cfg_ui(matlabbatch)
   ````
   
 ### 2. Generic System call (run FSL, ANTS, Freesurfer, ... or your app)
