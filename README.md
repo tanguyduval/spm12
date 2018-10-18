@@ -2,6 +2,51 @@ EXTENDED EDITION
 Toulouse Neuromaging Center - Inserm - UMR 1214
 Tanguy Duval
 
+## FEATURES
+### 1. BIDS parser module: create a participant BIDS pipeline in just a minute 
+  - download an example BIDS dataset: https://openneuro.org/datasets/ds001378/versions/00003
+  - open the matlabbatch using command `cfg_ui`
+  - **Add** a new module Parse BIDS
+  <img src="help/extended/parseBIDS.png" width="500">
+  
+  - **Fill** module as follows
+  <img src="help/extended/fillBIDS.png" width="500">
+  
+  - **Preview** your BIDS dataset
+  <img src="help/extended/previewBIDS.png" width="500">
+  
+  - add a new module BasicIO>FileOperation>Gunzip files
+  - Use the **dependency** button and select one modality (e.g. dwi) and fill as follows
+  <img src="help/extended/dependencyBIDS.png" width="250">
+  
+  <img src="help/extended/fillGUNZIP.png" width="500">
+  
+  - Add your modules and click **run**. Subject 1 session 1 will be processed.
+  - **Save** your single participant pipeline using the save icon and loop over your subjects/sessions
+  ````matlab
+  for isub=1:5
+  matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = isub;
+  spm_jobman('run',matlabbatch)
+  end
+  ````
+  - **Share** your pipeline:
+  ````matlab
+  % smooth diffusion data
+clear matlabbatch
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.parent = '<UNDEFINED>';
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = 1;
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.name = 'DWI';
+matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.files(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
+matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.outdir(1) = cfg_dep('Parse BIDS Directory: BIDS output path for derivatives', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
+matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.keep = true;
+matlabbatch{3}.spm.spatial.smooth.data(1) = cfg_dep('Gunzip Files: Gunzipped Files', substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{':'}));
+matlabbatch{3}.spm.spatial.smooth.fwhm = [8 8 8];
+matlabbatch{3}.spm.spatial.smooth.dtype = 0;
+matlabbatch{3}.spm.spatial.smooth.im = 0;
+matlabbatch{3}.spm.spatial.smooth.prefix = 's';
+matlabbatch{4}.spm.util.disp.data(1) = cfg_dep('Smooth: Smoothed Images', substruct('.','val', '{}',{3}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','files'));
+  ````
+  
 ## Use spm12
 #### CMD:  
 help of the first layer (standalone binary):
