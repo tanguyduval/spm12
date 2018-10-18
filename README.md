@@ -16,8 +16,10 @@ Tanguy Duval
   <img src="help/extended/previewBIDS.png" width="500">
   
   - add a new module BasicIO>FileOperation>Gunzip files
-  - Use the **dependency** button and select one modality (e.g. dwi)
+  - Use the **dependency** button and select one modality (e.g. dwi) and fill as follows
   <img src="help/extended/dependencyBIDS.png" width="250">
+  
+  <img src="help/extended/fillGUNZIP.png" width="500">
   
   - Add your modules and click **run**. Subject 1 session 1 will be processed.
   - **Save** your single participant pipeline using the save icon and loop over your subjects/sessions
