@@ -78,7 +78,8 @@ end
 % all collected, check subsasgn validity
 if sts
     % subsasgn_check only accepts single subscripts
-    [sts, val] = subsasgn_check(item, substruct('.','val'), {val});
+    initval = val;
+    [sts, val] = subsasgn_check(item, substruct('.','val'), {initval});
 end;
 if sts
     % dereference val after subsasgn_check
