@@ -14,10 +14,7 @@ Tanguy Duval
 
 `git clone --recurse-submodules https://github.com/tanguyduval/spm12.git`
 ````matlab
-addpath pathtospm/spm12
-addpath(fullfile(spm('Dir'),'matlabbatch'));
-addpath(fullfile(spm('Dir'),'config'));
-addpath(genpath(fullfile(spm('Dir'),'matlabbatch','cfg_basicio')));
+install;
 ````
 
 ## FEATURES
