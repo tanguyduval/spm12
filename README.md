@@ -26,19 +26,19 @@ addpath(genpath(fullfile(spm('Dir'),'matlabbatch','cfg_basicio')));
   - download an example BIDS dataset: https://openneuro.org/datasets/ds001378/versions/00003
   - open the matlabbatch using command `cfg_ui`
   - **Add** a new module Parse BIDS
-  <img src="help/extended/parseBIDS.png" width="500">
+  <img src="spm12/help/extended/parseBIDS.png" width="500">
   
   - **Fill** module as follows
-  <img src="help/extended/fillBIDS.png" width="500">
+  <img src="spm12/help/extended/fillBIDS.png" width="500">
   
   - **Preview** your BIDS dataset
-  <img src="help/extended/previewBIDS.png" width="500">
+  <img src="spm12/help/extended/previewBIDS.png" width="500">
   
   - add a new module BasicIO>FileOperation>Gunzip files
   - Use the **dependency** button and select one modality (e.g. dwi) and fill as follows
-  <img src="help/extended/dependencyBIDS.png" width="250">
+  <img src="spm12/help/extended/dependencyBIDS.png" width="250">
   
-  <img src="help/extended/fillGUNZIP.png" width="500">
+  <img src="spm12/help/extended/fillGUNZIP.png" width="500">
   
   - Add additional modules or just click **run**. Subject 1 session 1 will be processed.  
   Results will be saved into `bidsfolder/derivatives/matlabbatch/sub-NAME/ses-SESSION/DWI/`
@@ -76,19 +76,19 @@ cfg_ui(matlabbatch)
   - Download a 4D image https://openneuro.org/crn/datasets/ds001378/snapshots/00003/files/sub-control01:ses-01:dwi:sub-control01_ses-01_dwi.nii.gz
   - open the matlabbatch using command `cfg_ui`
   - **Add** a new module Call System Command
-  <img src="help/extended/addSYSTEM.png" width="500">
+  <img src="spm12/help/extended/addSYSTEM.png" width="500">
   
   - **Fill** the module as follows  
        *Use Docker: docker images with preinstalled neuroimaging softwares can be found on https://hub.docker.com/   
                    `bids/mrtrix3-connectome` includes ANTS MRtrix3 and FSL
                    docker images will be automatically downloaded and inputs/output folders mounted  
                    if you choose "NO", command will be run locally*  
-  <img src="help/extended/fillSYSTEM.png" width="500">
+  <img src="spm12/help/extended/fillSYSTEM.png" width="500">
    
    - **RUN** the command using the green play button
    - **Save** your preset module
-  <img src="help/extended/saveSYSTEM.png" width="500">
-  <img src="help/extended/savenameSYSTEM.png" width="300">
+  <img src="spm12/help/extended/saveSYSTEM.png" width="500">
+  <img src="spm12/help/extended/savenameSYSTEM.png" width="300">
   
   - **Reload** modules
 ````matlab
@@ -97,7 +97,7 @@ cfg_ui
 ````
 
   - **Use** your preset module in an other pipeline
-  <img src="help/extended/usesavedSYSTEM.png" width="500">
+  <img src="spm12/help/extended/usesavedSYSTEM.png" width="500">
 
   - Your preset is saved under `spm12\matlabbatch\cfg_basicio\System`  
     in `cfg_System_def.m` you have your preset values  
