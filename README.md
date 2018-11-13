@@ -96,7 +96,7 @@ cfg_ui
   - **Use** your preset module in an other pipeline
   <img src="spm12/help/extended/usesavedSYSTEM.png" width="500">
 
-  - Your preset is saved under `spm12\matlabbatch\cfg_basicio\System`  
+  - Your preset is saved under `apps\System`  
     in `cfg_System_def.m` you have your preset values  
 ````matlab
 system.fsl.fslmaths.tmean.inputs_SetDefaultValOnLoad{1}.anyfilebranch.help = '4D image (NIFTI)';
