@@ -22,7 +22,19 @@ switch lower(cmd)
         contents = cfg_ui_util('showitem', ciid, dflag);
         [tag, val] = cfg_util('harvest', ciid{:});
         try
-            feval(contents{10}, val);
+            if strfind(func2str(contents{10}),'cfg_run_call_system(''save''') && ~strcmp(contents{1},'Call System command')
+                answer = questdlg('Select an action','','Save','Delete','Cancel','Save');
+                switch answer
+                    case 'Save'
+                        feval(contents{10}, val);
+                    case 'Delete'
+                        [tag, valfull] = cfg_util('harvest', ciid{1});
+                        valfull = valfull{ciid{2}};
+                        cfg_run_call_system('delete',valfull);
+                end
+            else
+                feval(contents{10}, val);
+            end
         end
     case {'showitemstr'}
         % [namestr datastr] = cfg_ui_util('showitemstr', contents, dflag)
@@ -405,7 +417,15 @@ switch lower(cmd)
         set(handles.helpbox, 'Value',1, 'ListboxTop',1, 'string',cfg_justify(handles.helpbox, help{1}{1}));
         if ~isempty(contents{10})
             set(findobj(fig,'-regexp', 'Tag','.*Preview$'), 'Visible','on', ...
-                              'Enable','on');
+                'Enable','on');
+            previewmenus = findobj(fig,'-regexp', 'Tag','.*Preview$');
+            for iii=1:length(previewmenus)
+                if strfind(func2str(contents{10}),'cfg_run_call_system(''save''')
+                    set(previewmenus(iii),'Text','Save/Delete');
+                else
+                    set(previewmenus(iii),'Text','Preview');
+                end
+            end
         end
         
     case 'valedit_editvalue'
