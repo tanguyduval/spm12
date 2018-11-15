@@ -26,7 +26,8 @@ function item = initialise(item, val, dflag)
 rev = '$Rev: 4898 $'; %#ok
 
 % Make sure that full list is loaded if cfg_item tag contains special token
-if strfind(gettag(item),'SetDefaultValOnLoad')
+tag = gettag(item);
+if ~isempty(tag) &&  strcmp(tag(end),'_')
 dflag=0;
 end
 
