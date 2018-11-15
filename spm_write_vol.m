@@ -80,5 +80,16 @@ end
 
 %-Create and write image
 %--------------------------------------------------------------------------
+if strcmp(V.fname(max(1,end-6):end),'.nii.gz')
+    V.fname = V.fname(1:end-3);
+    gz = true;
+else
+    gz = false;
+end
 V = spm_create_vol(V);
 V = spm_write_plane(V,Y,':');
+if gz
+    gname = gzip(V.fname);
+    delete(V.fname);
+    V.fname = gname{1};
+end

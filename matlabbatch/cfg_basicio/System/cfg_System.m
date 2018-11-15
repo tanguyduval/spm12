@@ -38,12 +38,31 @@ eddy_correct         = cfg_cfg_call_system;
 eddy_correct.tag     = 'eddy_correct';
 eddy_correct.name    = 'eddy_correct';
 % ---------------------------------------------------------------------
+% tmean Tmean
+% ---------------------------------------------------------------------
+tmean         = cfg_cfg_call_system;
+tmean.tag     = 'tmean';
+tmean.name    = 'Tmean';
+% ---------------------------------------------------------------------
+% fslmaths fslmaths
+% ---------------------------------------------------------------------
+fslmaths         = cfg_choice;
+fslmaths.tag     = 'fslmaths';
+fslmaths.name    = 'fslmaths';
+fslmaths.values  = {tmean };
+% ---------------------------------------------------------------------
+% bet bet
+% ---------------------------------------------------------------------
+bet         = cfg_cfg_call_system;
+bet.tag     = 'bet';
+bet.name    = 'bet';
+% ---------------------------------------------------------------------
 % fsl FSL
 % ---------------------------------------------------------------------
 fsl         = cfg_choice;
 fsl.tag     = 'fsl';
 fsl.name    = 'FSL';
-fsl.values  = {eddy_correct };
+fsl.values  = {eddy_correct fslmaths bet };
 % ---------------------------------------------------------------------
 % rigid Rigid
 % ---------------------------------------------------------------------
@@ -58,16 +77,28 @@ antsregistration.tag     = 'antsregistration';
 antsregistration.name    = 'antsRegistration';
 antsregistration.values  = {rigid };
 % ---------------------------------------------------------------------
+% antsapplytransforms antsApplyTransforms
+% ---------------------------------------------------------------------
+antsapplytransforms         = cfg_cfg_call_system;
+antsapplytransforms.tag     = 'antsapplytransforms';
+antsapplytransforms.name    = 'antsApplyTransforms';
+% ---------------------------------------------------------------------
 % ants ANTS
 % ---------------------------------------------------------------------
 ants         = cfg_choice;
 ants.tag     = 'ants';
 ants.name    = 'ANTS';
-ants.values  = {antsregistration };
+ants.values  = {antsregistration antsapplytransforms };
+% ---------------------------------------------------------------------
+% dcm2bids dcm2bids
+% ---------------------------------------------------------------------
+dcm2bids         = cfg_cfg_call_system;
+dcm2bids.tag     = 'dcm2bids';
+dcm2bids.name    = 'dcm2bids';
 % ---------------------------------------------------------------------
 % system System
 % ---------------------------------------------------------------------
 cfg         = cfg_choice;
 cfg.tag     = 'system';
 cfg.name    = 'System';
-cfg.values  = {mrtrix3 fsl ants };
+cfg.values  = {mrtrix3 fsl ants dcm2bids };

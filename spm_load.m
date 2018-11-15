@@ -155,6 +155,8 @@ if strcmpi(spm_check_version,'octave') % bug #51093
     delim = '#';
 end
 d = textscan(S,'%s','Delimiter',delim);
+rm  = cellfun(@isempty, d{1});
+d{1}(rm)=[];
 if rem(numel(d{1}),N), error('Varying number of delimiters per line.'); end
 d = reshape(d{1},N,[])';
 allnum = true;

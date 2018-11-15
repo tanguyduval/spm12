@@ -77,13 +77,34 @@ cfg_mkdir.vout = @cfg_vout_mkdir;
 % ---------------------------------------------------------------------
 % scan scan number
 % ---------------------------------------------------------------------
-bidssession         = cfg_entry;
-bidssession.tag     = 'bids_ses';
+bidssessionnum         = cfg_entry;
+bidssessionnum.tag     = 'bids_sesnum';
+bidssessionnum.name    = 'Number';
+bidssessionnum.val     = {1};
+bidssessionnum.help    = {'Scanning session to process. 1 = first session of first subject'};
+bidssessionnum.strtype = 'n';
+bidssessionnum.num     = [1 1];
+
+% ---------------------------------------------------------------------
+% scan scan number
+% ---------------------------------------------------------------------
+bidssessionrel         = cfg_entry;
+bidssessionrel.tag     = 'bids_sesrel';
+bidssessionrel.name    = 'sub-Name/ses-Session';
+bidssessionrel.val     = {'sub-Name/ses-Session'};
+bidssessionrel.help    = {'Scanning session to process. Enter a string of this type: sub-Name/ses-Session'};
+bidssessionrel.strtype = 's';
+bidssessionrel.num     = [1 inf];
+
+% ---------------------------------------------------------------------
+% scan scan number
+% ---------------------------------------------------------------------
+bidssession         = cfg_choice;
+bidssession.tag     = 'bids_ses_type';
 bidssession.name    = 'BIDS session';
-bidssession.val     = {1};
+bidssession.values     = {bidssessionnum bidssessionrel};
+bidssession.val        = {bidssessionnum};
 bidssession.help    = {'Scanning session to process. 1 = first session of first subject'};
-bidssession.strtype = 'n';
-bidssession.num     = [1 1];
 
 % ---------------------------------------------------------------------
 % cfg_parsebids Parse BIDS Directory

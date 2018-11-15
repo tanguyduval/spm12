@@ -221,5 +221,6 @@ V.private = N;
 if isgzip
     fnametmp = V.fname;
     V.fname = gzip(V.fname,fileparts(V.fname));
+    V.fname = V.fname{1};
     delete(fnametmp)
 end

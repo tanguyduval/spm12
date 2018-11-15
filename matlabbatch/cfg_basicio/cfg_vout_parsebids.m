@@ -20,31 +20,36 @@ dep(1).tgt_spec   = cfg_findspec({{'filter','dir', 'strtype','e'}});
 % types = setdiff(fieldnames(BIDS.subjects(1)),{'name','path','session'});
 
 dep(2)            = cfg_dep;
-dep(2).sname      = sprintf('BIDS output path for derivatives');
+dep(2).sname      = sprintf('BIDS/derivatives/matlabbatch/sub-name/ses-session/NewDirectory/');
 dep(2).src_output = substruct('.','bidsderivatives');
 dep(2).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
 
 dep(3)            = cfg_dep;
-dep(3).sname      = sprintf('Subject Name');
-dep(3).src_output = substruct('.','sub');
-dep(3).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
+dep(3).sname      = sprintf('BIDS/sub-name/ses-session/');
+dep(3).src_output = substruct('.','bidssession');
+dep(3).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
 
 dep(4)            = cfg_dep;
-dep(4).sname      = sprintf('Session Name');
-dep(4).src_output = substruct('.','ses');
+dep(4).sname      = sprintf('Subject Name');
+dep(4).src_output = substruct('.','sub');
 dep(4).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
 
 dep(5)            = cfg_dep;
-dep(5).sname      = sprintf('sub-NAME/ses-SESSION');
-dep(5).src_output = substruct('.','relpath');
+dep(5).sname      = sprintf('Session Name');
+dep(5).src_output = substruct('.','ses');
 dep(5).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
+
+dep(6)            = cfg_dep;
+dep(6).sname      = sprintf('sub-name/ses-session');
+dep(6).src_output = substruct('.','relpath');
+dep(6).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
 
 if strcmp(job.parent,'<UNDEFINED>')
     job.parent = {[mfilename('fullpath') '_template']};  
     job.bids_ses = 1;
     job.name   = {'matlabbatch_test'};
 end
-if strcmp(job.bids_ses,'<UNDEFINED>')
+if strcmp(job.bids_ses_type,'<UNDEFINED>')
     job.bids_ses = 1;
 end
 out = cfg_run_parsebids(job);

@@ -120,13 +120,13 @@ else
         ochange = true; % no outputs specified (may be they were before)
         item.sout = [];
     end;
-
+    
     if ochange && ~isempty(item.sdeps)
         % delete changed outputs from dependent modules
         sdeps = item.sdeps;
-        if isfield(item.sout,'sname')
+        try
             rm = ~ismember({sdeps.sname},{item.sout.sname});
-        else
+        catch
             rm=true(1,length(sdeps));
         end
         item.sdeps = sdeps(~rm);
@@ -134,6 +134,16 @@ else
         % invalidate already computed outputs
         item.jout = cfg_inv_out;
     end;
+
+    % Check for missing inputs based on their name and inform user
+    if ~isempty(item.sdeps)
+        sdeps = {item.sdeps.sname};
+        missing = ~ismember(sdeps,{item.sout.sname});
+        if any(missing)
+            disp('The following dependencies are missing')
+            disp(sdeps(missing)');
+        end
+    end
 
     % even if no sources changed, source names may have changed
     for k = 1:numel(item.sdeps)
