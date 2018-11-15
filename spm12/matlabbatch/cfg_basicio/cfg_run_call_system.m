@@ -200,7 +200,8 @@ if ischar(cmd)
             if isempty(answer), return; end
             tree = strsplit(answer{1},'.');
             % create output dir
-            directory = fullfile(fileparts(mfilename('fullpath')),tree{1});
+            appssavepath = textread('apps_savepath.txt','%s');
+            directory = fullfile(appssavepath{1},tree{1});
             if ~exist(directory)
                 mkdir(directory);
                 new = true;
@@ -340,6 +341,59 @@ if ischar(cmd)
             fprintf(fid, '%s\n',jobstr{:});
             fclose(fid);
             disp(['files added in ' directory])
+            cfg_util('initcfg')
+        case 'delete'
+            job = varargin{1};
+            deffile = fieldnames(job);
+            [directory, cfgfile] = fileparts(which(['cfg_' deffile{1} '.m']));
+            
+            jobstr = fileread(fullfile(directory,[cfgfile '.m']));
+            jobstr = strrep(jobstr,'cfg_cfg_call_system','cfg_exbranch');
+            fid = fopen(fullfile(directory,[cfgfile '2.m']),'wt');
+            fprintf(fid,'%s',jobstr);
+            fclose(fid);
+            cfg = feval([cfgfile '2']);
+            delete(fullfile(directory,[cfgfile '2.m']))
+
+            subs=[];
+            cfg_tmp = cfg;
+            subjob = job.(deffile{1});
+            while length(fieldnames(subjob))==1
+                tag = fieldnames(subjob);
+                tag = tag{1};
+                ind = ismember(tagnames(cfg_tmp,1),tag);
+                subs = [subs, {'.','values','{}',{find(ind)}}];
+                cfg_tmp = cfg_tmp.values{find(ind)};
+                subjob = subjob.(tag);
+            end
+            subs = substruct(subs{:});
+            newsubcfg = subsref(cfg,subs(1:end-1));
+            newsubcfg(subs(end).subs{1}) = [];
+            cfg_new = subsasgn(cfg,subs(1:end-1),newsubcfg);
+            
+            %write
+            fid = fopen(fullfile(directory,[cfgfile '.m']),'wt');
+            fprintf(fid, 'function cfg = %s(varargin)\n\n',cfgfile);
+            jobstr = gencode(cfg_new,'cfg')';
+            jobstr = strrep(jobstr,'cfg_exbranch','cfg_cfg_call_system');
+            fprintf(fid, '%s\n',jobstr{:});
+            fclose(fid);
+            
+            % read def
+            defstr = gencode(job.(deffile{1}),deffile{1})';
+            loc = cell2mat(strfind(defstr,'.cmd = '));
+            pattern = defstr{1}(1:loc);
+            func = str2func([cfgfile '_def']);
+            cfgdef = feval(func);
+            jobdefstr = gencode(cfgdef,deffile{1})';
+            jobdefstr = jobdefstr(cell2mat(cellfun(@isempty,strfind(jobdefstr,pattern),'uni',0)));
+            fid = fopen(fullfile(directory,[cfgfile '_def.m']),'wt');
+            fprintf(fid, 'function %s = cfg_%s_def\n',lower(deffile{1}),deffile{1});
+            fprintf(fid, '%s\n',jobdefstr{:});
+            fclose(fid);
+            
+            disp(['module ' pattern(1:end-1) ' deleted'])
+            cfg_util('initcfg')
         otherwise
             cfg_message('unknown:cmd', 'Unknown command ''%s''.', cmd);
     end
@@ -352,7 +406,23 @@ if ~isstruct(job)
     cfg_message('isstruct:job', 'Job must be a struct.');
 end
 if nargin>1 && rename
-if isfield(job,'inputs_SetDefaultValOnLoad'), job.inputs=job.inputs_SetDefaultValOnLoad; job = rmfield(job,'inputs_SetDefaultValOnLoad');   end
-if isfield(job,'outputs_SetDefaultValOnLoad'), job.outputs=job.outputs_SetDefaultValOnLoad; job = rmfield(job,'outputs_SetDefaultValOnLoad'); end
-if isfield(job,'usedocker_SetDefaultValOnLoad'), job.usedocker=job.usedocker_SetDefaultValOnLoad; job = rmfield(job,'usedocker_SetDefaultValOnLoad'); end
+if isfield(job,'inputs_'), job.inputs=job.inputs_; job = rmfield(job,'inputs_');   end
+if isfield(job,'outputs_'), job.outputs=job.outputs_; job = rmfield(job,'outputs_'); end
+if isfield(job,'usedocker_'), job.usedocker=job.usedocker_; job = rmfield(job,'usedocker_'); end
+end
+
+function tree = local_tag2cfgtree(cfg,tag)
+if strcmpi(gettag(cfg),tag)
+    tree = gettag(cfg);
+elseif ~isa(cfg,'cfg_exbranch')
+    tags = tagnames(cfg,1);
+    for ii=1:length(tags)
+        tree = local_tag2cfgtree(cfg.values{ii},tag);
+        if ~isempty(tree)
+            tree = [gettag(cfg) '.' tree];
+            break;
+        end
+    end
+else
+    tree = [];
 end

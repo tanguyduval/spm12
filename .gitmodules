@@ -1,3 +1,3 @@
-[submodule "external/bids_tools_matlab"]
-	path = external/bids_tools_matlab
-	url = https://github.com/tanguyduval/bids_tools_matlab
+[submodule "spm12/external/bids_tools_matlab"]
+	path = spm12/external/bids_tools_matlab
+	url = https://github.com/tanguyduval/bids_tools_matlab.git
