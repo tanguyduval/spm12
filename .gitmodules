@@ -1,3 +1,6 @@
 [submodule "spm12/external/bids_tools_matlab"]
 	path = spm12/external/bids_tools_matlab
 	url = https://github.com/tanguyduval/bids_tools_matlab.git
+[submodule "apps/Quality Control/imtool3D_td"]
+	path = apps/Quality Control/imtool3D_td
+	url = https://github.com/tanguyduval/imtool3D_td.git
