@@ -67,49 +67,65 @@ if ischar(cmd)
                         in{k} = {char(string(intmp))};
                 end
             end
-            
-            % DOCKERIFY
-            mountdir = '';
-            for k = 1:numel(in)
-                mountdir = [mountdir '-v ' fileparts(in{k}{1}) ':/i' num2str(k) ' '];
-                dockerinfname{k} = strrep(in{k}{1},[fileparts(in{k}{1}) filesep],['/i' num2str(k) '/']);
-            end
-            for k = 1:numel(job.outputs)
-                mountdir = [mountdir '-v ' job.outputs{k}.outputs.directory{1} ':/o' num2str(k) ' '];
-                dockerout{k} =  ['/o' num2str(k)];
-                dockeroutfname{k} = [dockerout{k} '/' job.outputs{k}.outputs.string];
-            end
-            
+                        
             % Check if all outputs already exists
             out.outputs = cell(size(job.outputs));
             out.outputs = job.outputs;
             if ~isempty(job.outputs)
                 alreadyexist = true;
-            for io = 1:length(job.outputs)
-                out.outputs{io} = {fullfile(job.outputs{k}.outputs.directory{1},job.outputs{io}.outputs.string)};
-                alreadyexist = alreadyexist & exist(out.outputs{io}{1},'file');
-            end
+                for io = 1:length(job.outputs)
+                    % replace token
+                    tokens = regexp(job.outputs{io}.outputs.string,'(%i\d)','match');
+                    for itok = 1:length(tokens)
+                        job.outputs{io}.outputs.string = strrep(job.outputs{io}.outputs.string,tokens{itok},in{str2double(tokens{itok}(3:end))}{1});
+                    end
+                    out.outputs{io} = {fullfile(job.outputs{io}.outputs.directory{1},job.outputs{io}.outputs.string)};
+                    alreadyexist = alreadyexist & exist(out.outputs{io}{1},'file');
+                end
+                if alreadyexist
+                    disp(['<strong>output file already exists, assuming that the processing was already done... skipping</strong>'])
+                    disp(['Delete output file to restart this job = ' out.outputs{1}{1}])
+                end
             else
                 alreadyexist = false;
             end
             
-            if alreadyexist
-                disp(['<strong>output file already exists, assuming that the processing was already done... skipping</strong>'])
-                disp(['Delete output file to restart this job = ' dockeroutfname{1}])
-            else
+            % DOCKERIFY
+            mountdir = '';
+            for k = 1:numel(in)
+                type = fieldnames(job.inputs{k});
+                if strcmp(type{1},'directorybranch')
+                mountdir = [mountdir '-v "' in{k}{1} ':/i' num2str(k) '" '];
+                dockerinfname{k} = ['/i' num2str(k) '/'];
+                else
+                mountdir = [mountdir '-v "' fileparts(in{k}{1}) ':/i' num2str(k) '" '];
+                dockerinfname{k} = strrep(in{k}{1},[fileparts(in{k}{1}) filesep],['/i' num2str(k) '/']);
+                end
+            end
+            for k = 1:numel(job.outputs)
+                mountdir = [mountdir '-v "' fullfile(job.outputs{k}.outputs.directory{1},fileparts(job.outputs{k}.outputs.string)) ':/o' num2str(k) '" '];
+                dockeroutfname{k} = strrep(fullfile(job.outputs{io}.outputs.directory{1},job.outputs{k}.outputs.string),[fileparts(fullfile(job.outputs{io}.outputs.directory{1},job.outputs{k}.outputs.string)) filesep],['/o' num2str(k) '/']);
+            end
+
+            
+            if ~alreadyexist
                 % Replace token i%d and o%d by filenames
                 cmd = job.cmd;
                 for ii=1:length(in)
                     if isfield(job.usedocker,'dockerimg') 
+                        cmd = strrep(cmd,sprintf('%%i%d',ii),dockerinfname{ii});
                         cmd = strrep(cmd,[' ' sprintf('i%d',ii)],[' ' dockerinfname{ii} ' ']);
                     else
+                        cmd = strrep(cmd,sprintf('%%i%d',ii),in{ii}{1});
                         cmd = strrep(cmd,[' ' sprintf('i%d',ii)],[' ' in{ii}{1} ' ']);
                     end
                 end
                 for ii=1:length(job.outputs)
                     if isfield(job.usedocker,'dockerimg')
+                        cmd = strrep(cmd,sprintf('%%o%d',ii),dockeroutfname{ii});
                         cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' dockeroutfname{ii} ' ']);
                     else
+                        cmd = strrep(cmd,sprintf('%%i%d',ii),out.outputs{ii}{1});
                         cmd = strrep(cmd,[' ' sprintf('o%d',ii)],[' ' out.outputs{ii}{1} ' ']);
                     end
                 end
@@ -118,13 +134,15 @@ if ischar(cmd)
                 if ~isfield(job.usedocker,'dockerimg')
                     disp(['Running terminal command: ' cmd])
                     [status, stdout]=system(cmd,'-echo');
+                    if status, error(sprintf('%s\n\nLocal command:\n%s\n',stdout,cmd)); end
                 else % docker
                     cmdcell = strsplit(cmd);
                     cmddocker = ['docker run --entrypoint ' cmdcell{1} ' ' mountdir job.usedocker.dockerimg ' ' strjoin(cmdcell(2:end))];
                     disp(['Running terminal command: ' cmddocker])
                     [status, stdout]=system(cmddocker,'-echo');
+                    if status, error(sprintf('%s\nLocal command: \n%s\n\nCorresponding Docker command:\n%s\n',stdout,cmd,cmddocker)); end
                 end
-                if status, error(stdout); end
+                
                 
                 
                 % gunzip output for FSL if .nii was used
@@ -230,6 +248,7 @@ if ischar(cmd)
             cfg_new.name = tree{end};
             
             jj=2;
+            iscfg_exbranch=false;
             if ~new
                 jobstr = fileread(fullfile(directory,['cfg_' tree{1} '.m']));
                 jobstr = strrep(jobstr,'cfg_cfg_call_system','cfg_exbranch');
@@ -246,17 +265,27 @@ if ischar(cmd)
                         subs = [subs, {'.','values','{}',{find(ind,1)}}];
                         cfg_tmp = subsref(cfg,substruct(subs{:}));
                         if isa(cfg_tmp,'cfg_exbranch')
-                            warning([answer{1} ' already exists. Stop.']);
-                            return
+                            answ = questdlg([answer{1} ' already exists... override?'],'Override?');
+                            switch answ
+                                case 'Yes'
+                                    iscfg_exbranch = true;
+                                    break
+                                otherwise
+                                    return
+                            end
                         end
                     else
                         break
                     end
                 end
-                subs = [subs, {'.','values','{}',{length(cfg_tmp.values)+1}}];
-                subs = substruct(subs{:});
+                if ~iscfg_exbranch
+                    subs = [subs, {'.','values','{}',{length(cfg_tmp.values)+1}}];
+                    subs = substruct(subs{:});
+                end
             end
             
+            if ~iscfg_exbranch
+                
             for ii=length(tree)-1:-1:(jj-1)
                 cfg_tmp         = cfg_choice;
                 cfg_tmp.tag     = genvarname(lower(tree{ii}));
@@ -277,19 +306,39 @@ if ischar(cmd)
             fprintf(fid, 'function cfg = %s(varargin)\n\n',['cfg_' tree{1}]);
             fprintf(fid, '%s\n',jobstr{:});
             fclose(fid);
+            end
             
             % generate cfg_CML_def
-            if new
-                fid = fopen(fullfile(directory,['cfg_' tree{1} '_def.m']),'wt');
-                fprintf(fid, 'function %s = cfg_%s_def\n',lower(tree{1}),tree{1});
+            cfg_def_fname = fullfile(directory,['cfg_' tree{1} '_def.m']);
+            if ~new
+                addpath(directory)
+                cfgdef = eval(['cfg_' tree{1} '_def']);
+                tree = genvarname(lower(tree));
+                switch length(tree)
+                    case 2
+                        cfgdef.(tree{2}) = job;
+                    case 3
+                        cfgdef.(tree{2}).(tree{3}) = job;
+                    case 4
+                        cfgdef.(tree{2}).(tree{3}).(tree{4}) = job;
+                    case 5
+                        cfgdef.(tree{2}).(tree{3}).(tree{4}).(tree{5}) = job;
+                    case 6
+                        cfgdef.(tree{2}).(tree{3}).(tree{4}).(tree{5}).(tree{6}) = job;
+                    case 7
+                        cfgdef.(tree{2}).(tree{3}).(tree{4}).(tree{5}).(tree{6}).(tree{7}) = job;
+                    case 8
+                        cfgdef.(tree{2}).(tree{3}).(tree{4}).(tree{5}).(tree{6}).(tree{7}).(tree{8}) = job;
+                end
+                jobstr = gencode(cfgdef,tree{1})';
+
             else
-                fid = fopen(fullfile(directory,['cfg_' tree{1} '_def.m']),'a');
+                jobstr = gencode(job,strjoin(cellfun(@genvarname,lower(tree),'uni',0),'.'))';
             end
-            jobstr = gencode(job,strjoin(cellfun(@genvarname,lower(tree),'uni',0),'.'))';
+            fid = fopen(cfg_def_fname,'wt');
+            fprintf(fid, 'function %s = cfg_%s_def\n',lower(tree{1}),tree{1});
             fprintf(fid, '%s\n',jobstr{:});
             fclose(fid);
-
-            addpath(directory)
             disp(['files added in ' directory])
         otherwise
             cfg_message('unknown:cmd', 'Unknown command ''%s''.', cmd);
