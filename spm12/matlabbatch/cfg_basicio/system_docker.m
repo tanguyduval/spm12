@@ -3,16 +3,28 @@ function system_docker(dockerimage, cmd, varargin)
 % system_docker(dockerimage, cmd, varargin)
 %
 % Example:
-%   dockerimage = 'bids/mrtrix3_connectome';   
-%   sourcei1 = 'path/source.nii';    
-%   output = 'path/out.nii';    
-%   system_docker(dockerimage, 'fslmaths %i1 -Tmean %i2', sourcei1, output)
+%   Get ANTS Registration help:
+%     system_docker('bids/mrtrix3_connectome', 'antsRegistration --help')
+%
+%   RUN fslmaths:
+%     dockerimage = 'bids/mrtrix3_connectome';   
+%     sourcei1 = 'path/source.nii';    
+%     output = 'path/out.nii';    
+%     system_docker(dockerimage, 'fslmaths %i1 -Tmean %i2', sourcei1, output)
 %
 % Tanguy Duval, 2018, Toulouse Neuroimaging Center
 
 in = varargin;
 nopath = cellfun(@isempty,cellfun(@fileparts,in,'uni',0));
 in(nopath) = cellfun(@(x) fullfile(pwd,x),in(nopath),'uni',0);
+
+% Test if docker is correctly installed
+if ~isempty(dockerimage)
+    [status, res] = system('docker');
+    if status
+        warndlg(sprintf('%s\n ... Docker is not up and running...\nPlease install and run docker, then launch matlab from a terminal by using the following command:\n "%s"',res,fullfile(matlabroot,'bin','matlab')))
+    end
+end
 
 % DOCKERIFY
 mountdir = '';

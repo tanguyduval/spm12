@@ -341,7 +341,6 @@ if ischar(cmd)
             fprintf(fid, '%s\n',jobstr{:});
             fclose(fid);
             disp(['files added in ' directory])
-            cfg_util('initcfg')
         case 'delete'
             job = varargin{1};
             deffile = fieldnames(job);
@@ -393,7 +392,6 @@ if ischar(cmd)
             fclose(fid);
             
             disp(['module ' pattern(1:end-1) ' deleted'])
-            cfg_util('initcfg')
         otherwise
             cfg_message('unknown:cmd', 'Unknown command ''%s''.', cmd);
     end

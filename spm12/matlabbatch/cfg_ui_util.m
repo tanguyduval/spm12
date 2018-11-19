@@ -22,7 +22,7 @@ switch lower(cmd)
         contents = cfg_ui_util('showitem', ciid, dflag);
         [tag, val] = cfg_util('harvest', ciid{:});
         try
-            if strfind(func2str(contents{10}),'cfg_run_call_system(''save''') && ~strcmp(contents{1},'Call System command')
+            if contains(func2str(contents{10}),'cfg_run_call_system(''save''') && ~strcmp(contents{1},'Call System command')
                 answer = questdlg('Select an action','','Save','Delete','Cancel','Save');
                 switch answer
                     case 'Save'
