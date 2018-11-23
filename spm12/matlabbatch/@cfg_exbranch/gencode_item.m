@@ -37,6 +37,20 @@ if ~isempty(item.prog) && isa(item.prog, 'function_handle')
 else
     functx = {};
 end
+if strcmp(functx,'@(job)cfg_run_call_system(''run'',job)') || strcmp(functx,'@(job)cfg_run_call_matlab(''run'',job)')
+    str{1} = '% ---------------------------------------------------------------------';
+    str{2} = sprintf('%% %s %s', item.cfg_branch.tag, item.cfg_branch.name);
+    str{3} = '% ---------------------------------------------------------------------';
+    str{4} = sprintf('%s         = %s;', tag, 'cfg_cfg_call_system');
+    str{end+1} = sprintf('%s.tag     = ''%s'';', tag, item.cfg_branch.tag);
+    % Add three spaces to name tag - this will align equal signs
+    % Works only because gencode does not produce subscripts for strings
+    str1 = gencode(item.cfg_branch.name, sprintf('%s.name   ', tag), tagctx);
+    str = [str(:)' str1(:)'];
+    cind = 4;
+    ccnt = 1;
+    return;
+end
 if ~isempty(item.vout) && isa(item.vout, 'function_handle')
     functx{end+1} = func2str(item.vout);
 end
