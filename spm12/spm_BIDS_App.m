@@ -249,17 +249,30 @@ if strncmp('participant',BIDS_App.level,11)
     
     setenv SHELL /bin/bash
     setenv('DYLD_LIBRARY_PATH', '');
-
+    
+    errorsubs = {};
     BIDS_ORIG = BIDS;
     for s=1:numel(BIDS_App.participants)
         BIDS = BIDS_ORIG;
         idx = find(ismember({BIDS.subjects.name},BIDS_App.participants{s}));
         for idxi = idx
-            matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = idxi;
-            spm('FnBanner',['BIDS ' upper(BIDS_App.level) ' ' BIDS.subjects(idxi).name ' ' BIDS.subjects(idxi).session]);
-            spm_jobman('run', matlabbatch);
+            try
+                matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = idxi;
+                spm('FnBanner',['BIDS ' upper(BIDS_App.level) ' ' BIDS.subjects(idxi).name ' ' BIDS.subjects(idxi).session]);
+                spm_jobman('run', matlabbatch);
+            catch err
+                disp(err.message)
+                errorsubs{end+1,1} = ['sub-' BIDS.subjects(idxi).name ' ses-' BIDS.subjects(idxi).session ': ' err.message(1,1:end)];
+            end
+
         end
     end
+    
+    if ~isempty(errorsubs)
+        disp('the following subjects could not be run:')
+        disp(errorsubs)
+    end
+
     
     % make sure relevant files are stored in BIDS_App.outdir
 end
