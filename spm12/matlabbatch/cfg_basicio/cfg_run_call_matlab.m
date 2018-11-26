@@ -68,6 +68,20 @@ if ischar(cmd)
             if nargout > 0
                 varargout{1} = out;
             end
+            
+        case 'save'
+            job = varargin{1};
+            [directory, tree] = generatetree(['Matlab.' func2str(job.fun)],cfg_cfg_call_matlab);
+            if isempty(tree), return; end            
+            % generate cfg_CML_def
+            jobstr = generatecfgdef(tree,job);
+            cfg_def_fname = fullfile(directory,['cfg_' tree{1} '_def.m']);
+            fid = fopen(cfg_def_fname,'wt');
+            fprintf(fid, 'function %s = cfg_%s_def\n',lower(tree{1}),tree{1});
+            fprintf(fid, '%s\n',jobstr{:});
+            fclose(fid);
+            disp(['files added in ' directory])
+
         case 'vout'
             job = local_getjob(varargin{1});
             % initialise empty cfg_dep array
@@ -138,3 +152,5 @@ function job = local_getjob(job)
 if ~isstruct(job)
     cfg_message('isstruct:job', 'Job must be a struct.');
 end
+if isfield(job,'inputs_'), job.inputs=job.inputs_; job = rmfield(job,'inputs_');   end
+if isfield(job,'outputs_'), job.outputs=job.outputs_; job = rmfield(job,'outputs_'); end

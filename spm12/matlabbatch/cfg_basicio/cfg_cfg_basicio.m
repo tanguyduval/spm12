@@ -104,8 +104,23 @@ bidssession.tag     = 'bids_ses_type';
 bidssession.name    = 'BIDS session';
 bidssession.values     = {bidssessionnum bidssessionrel};
 bidssession.val        = {bidssessionnum};
-bidssession.help    = {'Scanning session to process. 1 = first session of first subject'};
+bidssession.help    = {'Scanning session to process. 1 = first session of first subject',...
+                       'Preview ''Parent directory'' to list all sessions'};
 
+% ---------------------------------------------------------------------
+% name New Directory Name
+% ---------------------------------------------------------------------
+derivativesname         = cfg_entry;
+derivativesname.tag     = 'derivativesname';
+derivativesname.name    = 'New Directory Name (BIDS/derivatives/NewDir)';
+derivativesname.help    = {'Name for the new directory.',...
+                'Directory is created in the ''derivatives'' folder of your Bids directory',...
+                'A virtual output will be accessible in your dependency tree',...
+                'Leave empty if you do not want an output directory'};
+derivativesname.strtype = 's';
+derivativesname.val     = {''};
+derivativesname.num     = [0  Inf];
+% -----------------------------
 % ---------------------------------------------------------------------
 % cfg_parsebids Parse BIDS Directory
 % ---------------------------------------------------------------------
@@ -114,7 +129,7 @@ parentbids.preview    = @(parent) cfg_preview_parsebids(parent);
 cfg_parsebids         = cfg_exbranch;
 cfg_parsebids.tag     = 'cfg_parsebids';
 cfg_parsebids.name    = 'Parse BIDS Directory';
-cfg_parsebids.val     = {parentbids, bidssession name};
+cfg_parsebids.val     = {parentbids, bidssession derivativesname};
 cfg_parsebids.help    = {'Parse a BIDS directory.'};
 cfg_parsebids.prog    = @cfg_run_parsebids;
 cfg_parsebids.vout    = @cfg_vout_parsebids;
@@ -1432,7 +1447,7 @@ run_ops         = cfg_choice;
 run_ops.tag     = 'run_ops';
 run_ops.name    = 'Run';
 run_ops.help    = {''};
-run_ops.values  = {runjobs call_matlab cfg_cfg_call_system};
+run_ops.values  = {runjobs cfg_cfg_call_matlab cfg_cfg_call_system};
 % ---------------------------------------------------------------------
 % cfg_basicio BasicIO
 % ---------------------------------------------------------------------

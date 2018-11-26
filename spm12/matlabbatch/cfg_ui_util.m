@@ -22,15 +22,15 @@ switch lower(cmd)
         contents = cfg_ui_util('showitem', ciid, dflag);
         [tag, val] = cfg_util('harvest', ciid{:});
         try
-            if contains(func2str(contents{10}),'cfg_run_call_system(''save''') && ~strcmp(contents{1},'Call System command')
+            if (contains(func2str(contents{10}),'cfg_run_call_system(''save''') && ~strcmp(contents{1},'Call System command')) || (contains(func2str(contents{10}),'cfg_run_call_matlab(''save''') && ~strcmp(contents{1},'Call MATLAB function'))
                 answer = questdlg('Select an action','','Save','Delete','Cancel','Save');
                 switch answer
                     case 'Save'
                         feval(contents{10}, val);
                     case 'Delete'
-                        [tag, valfull] = cfg_util('harvest', ciid{1});
-                        valfull = valfull{ciid{2}};
-                        cfg_run_call_system('delete',valfull);
+                        [tag, jobfull] = cfg_util('harvest', ciid{1});
+                        jobfull = jobfull{ciid{2}};
+                        deletetree(jobfull);
                 end
             else
                 feval(contents{10}, val);
@@ -420,7 +420,7 @@ switch lower(cmd)
                 'Enable','on');
             previewmenus = findobj(fig,'-regexp', 'Tag','.*Preview$');
             for iii=1:length(previewmenus)
-                if strfind(func2str(contents{10}),'cfg_run_call_system(''save''')
+                if contains(func2str(contents{10}),'cfg_run_call_system(''save''') || contains(func2str(contents{10}),'cfg_run_call_matlab(''save''')
                     set(previewmenus(iii),'Text','Save/Delete');
                 else
                     set(previewmenus(iii),'Text','Preview');

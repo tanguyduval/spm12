@@ -8,10 +8,10 @@ function [directory, tree, new] = generatetree(Name, base_cfg)
 directory = [];
 tree = [];
 % get user pref
-prompt = {'Module name:'};
+prompt = {'Module name:', 'Documentation:'};
 title = 'Save Command configuration';
-dims = [1 35];
-definput = {Name};
+dims = [1 35; 5 70];
+definput = {Name, ''};
 answer = inputdlg(prompt,title,dims,definput);
 if isempty(answer), return; end
 tree = strsplit(answer{1},'.');
@@ -64,6 +64,7 @@ end
 cfg_new     = base_cfg;
 cfg_new.tag = genvarname(lower(tree{end}));
 cfg_new.name = tree{end};
+cfg_new.help = cellstr(answer{2})';
 
 jj=2;
 iscfg_callsystem=false;
