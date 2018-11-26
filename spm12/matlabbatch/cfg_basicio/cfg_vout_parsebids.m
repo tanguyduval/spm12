@@ -20,29 +20,24 @@ dep(1).tgt_spec   = cfg_findspec({{'filter','dir', 'strtype','e'}});
 % types = setdiff(fieldnames(BIDS.subjects(1)),{'name','path','session'});
 
 dep(2)            = cfg_dep;
-dep(2).sname      = sprintf('BIDS/derivatives/matlabbatch/sub-name/ses-session/NewDirectory/');
-dep(2).src_output = substruct('.','bidsderivatives');
+dep(2).sname      = fullfile('BIDS/sub-name/ses-session/');
+dep(2).src_output = substruct('.','bidssession');
 dep(2).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
 
 dep(3)            = cfg_dep;
-dep(3).sname      = sprintf('BIDS/sub-name/ses-session/');
-dep(3).src_output = substruct('.','bidssession');
-dep(3).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
+dep(3).sname      = sprintf('Subject Name');
+dep(3).src_output = substruct('.','sub');
+dep(3).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
 
 dep(4)            = cfg_dep;
-dep(4).sname      = sprintf('Subject Name');
-dep(4).src_output = substruct('.','sub');
+dep(4).sname      = sprintf('Session Name');
+dep(4).src_output = substruct('.','ses');
 dep(4).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
 
 dep(5)            = cfg_dep;
-dep(5).sname      = sprintf('Session Name');
-dep(5).src_output = substruct('.','ses');
+dep(5).sname      = sprintf('sub-name/ses-session');
+dep(5).src_output = substruct('.','relpath');
 dep(5).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
-
-dep(6)            = cfg_dep;
-dep(6).sname      = sprintf('sub-name/ses-session');
-dep(6).src_output = substruct('.','relpath');
-dep(6).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','s'}});
 
 if strcmp(job.parent,'<UNDEFINED>')
     job.parent = {[mfilename('fullpath') '_template']};  
@@ -54,7 +49,15 @@ if strcmp(job.bids_ses_type,'<UNDEFINED>')
 end
 out = cfg_run_parsebids(job);
 
+if ~isempty(job.derivativesname)
+    dep(6)            = cfg_dep;
+    dep(6).sname      = [fullfile('BIDS/derivatives', job.derivativesname, out.relpath) filesep];
+    dep(6).src_output = substruct('.','bidsderivatives');
+    dep(6).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
+end
+
 if isempty(out), return; end
+dep(2).sname      = [fullfile('BIDS',out.relpath) filesep];
 for ff = setdiff(fieldnames(out)',{'bidsdir','bidsderivatives','sub','ses','relpath'})
     dep(end+1)            = cfg_dep;
     dep(end).sname      = strrep(strrep(ff{1},'_meta',' metadata'),'_',': ');

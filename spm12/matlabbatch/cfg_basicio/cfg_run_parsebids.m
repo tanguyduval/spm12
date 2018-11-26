@@ -73,13 +73,17 @@ disp(['Session = ' SCAN.session])
 out.bidsdir         = {BIDS.path};
 out.sub             = SCAN.name;
 out.ses             = SCAN.session;
-out.relpath         = fullfile(['sub-' SCAN.name],['ses-' SCAN.session]);
+if strcmp(SCAN.session,'none')
+    out.relpath         = fullfile(['sub-' SCAN.name]);
+else
+    out.relpath         = fullfile(['sub-' SCAN.name],['ses-' SCAN.session]);
+end
 
-if strcmp(job.name,'<UNDEFINED>'), job.name = 'test'; end
-out.bidsderivatives = fullfile(out.bidsdir,'derivatives','matlabbatch',['sub-' SCAN.name],['ses-' SCAN.session],job.name);
+if strcmp(job.derivativesname,'<UNDEFINED>'), job.derivativesname = ''; end
+out.bidsderivatives = fullfile(out.bidsdir,'derivatives','matlabbatch',['sub-' SCAN.name],['ses-' SCAN.session],job.derivativesname);
 out.bidssession = fullfile(out.bidsdir,['sub-' SCAN.name],['ses-' SCAN.session]);
 
-if ~exist(out.bidsderivatives{1},'dir')
+if ~isempty(job.derivativesname) && ~exist(out.bidsderivatives{1},'dir')
     mkdir(out.bidsderivatives{1})
 end
 
