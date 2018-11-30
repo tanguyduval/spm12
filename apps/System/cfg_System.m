@@ -6,24 +6,28 @@ function cfg = cfg_System(varargin)
 dwidenoise         = cfg_cfg_call_system;
 dwidenoise.tag     = 'dwidenoise';
 dwidenoise.name    = 'dwidenoise';
+dwidenoise.help = '';
 % ---------------------------------------------------------------------
 % dwi2mask dwi2mask
 % ---------------------------------------------------------------------
 dwi2mask         = cfg_cfg_call_system;
 dwi2mask.tag     = 'dwi2mask';
 dwi2mask.name    = 'dwi2mask';
+dwi2mask.help = '';
 % ---------------------------------------------------------------------
 % dwi2tensor dwi2tensor
 % ---------------------------------------------------------------------
 dwi2tensor         = cfg_cfg_call_system;
 dwi2tensor.tag     = 'dwi2tensor';
 dwi2tensor.name    = 'dwi2tensor';
+dwi2tensor.help = '';
 % ---------------------------------------------------------------------
 % tensor2metric tensor2metric
 % ---------------------------------------------------------------------
 tensor2metric         = cfg_cfg_call_system;
 tensor2metric.tag     = 'tensor2metric';
 tensor2metric.name    = 'tensor2metric';
+tensor2metric.help = '';
 % ---------------------------------------------------------------------
 % mrtrix3 MRtrix3
 % ---------------------------------------------------------------------
@@ -37,12 +41,14 @@ mrtrix3.values  = {dwidenoise dwi2mask dwi2tensor tensor2metric };
 eddy_correct         = cfg_cfg_call_system;
 eddy_correct.tag     = 'eddy_correct';
 eddy_correct.name    = 'eddy_correct';
+eddy_correct.help = '';
 % ---------------------------------------------------------------------
 % tmean Tmean
 % ---------------------------------------------------------------------
 tmean         = cfg_cfg_call_system;
 tmean.tag     = 'tmean';
 tmean.name    = 'Tmean';
+tmean.help = '';
 % ---------------------------------------------------------------------
 % fslmaths fslmaths
 % ---------------------------------------------------------------------
@@ -56,6 +62,7 @@ fslmaths.values  = {tmean };
 bet         = cfg_cfg_call_system;
 bet.tag     = 'bet';
 bet.name    = 'bet';
+bet.help = '';
 % ---------------------------------------------------------------------
 % fsl FSL
 % ---------------------------------------------------------------------
@@ -82,6 +89,7 @@ antsregistration.values  = {rigid };
 antsapplytransforms         = cfg_cfg_call_system;
 antsapplytransforms.tag     = 'antsapplytransforms';
 antsapplytransforms.name    = 'antsApplyTransforms';
+antsapplytransforms.help = '';
 % ---------------------------------------------------------------------
 % ants ANTS
 % ---------------------------------------------------------------------
@@ -95,6 +103,7 @@ ants.values  = {antsregistration antsapplytransforms };
 dcm2bids         = cfg_cfg_call_system;
 dcm2bids.tag     = 'dcm2bids';
 dcm2bids.name    = 'dcm2bids';
+dcm2bids.help = '';
 % ---------------------------------------------------------------------
 % system System
 % ---------------------------------------------------------------------
