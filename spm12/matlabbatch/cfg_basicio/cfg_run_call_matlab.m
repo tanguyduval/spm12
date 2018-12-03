@@ -73,6 +73,9 @@ if ischar(cmd)
             for k = 1:numel(out.outputs)
                 if isfield(job.outputs{k},'filterbranch') && isfield(job.outputs{k}.filterbranch.filter,'nifti') && ( isnumeric(out.outputs{k}) || islogical(out.outputs{k}))
                     fname = fullfile(char(job.outputs{k}.filterbranch.directory),char(job.outputs{k}.filterbranch.filename));
+                    if ~strcmp(fname(max(1,end-3):end),'.nii') && ~strcmp(fname(max(1,end-6):end),'.nii.gz')
+                        fname = [fname,'.nii'];
+                    end
                     save_nii_v2(out.outputs{k},fname,ref)
                     out.outputs{k} = fname;
                 end
