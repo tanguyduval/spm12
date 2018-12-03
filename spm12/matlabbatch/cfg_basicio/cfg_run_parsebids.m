@@ -64,28 +64,74 @@ elseif isfield(job.bids_ses_type,'bids_sesrel')
         return
     end
 end
+
 % SELECT CURRENT SUBJECT
-SCAN = BIDS.subjects(min(end,job.bids_ses));
+session = min(length(BIDS.subjects),job.bids_ses);
+SCAN = BIDS.subjects(session);
 disp(['Subject = ' SCAN.name])
 disp(['Session = ' SCAN.session])
 
-% ADD OUTPUT DIRECTORIES
+% Get Path
 out.bidsdir         = {BIDS.path};
 out.sub             = SCAN.name;
 out.ses             = SCAN.session;
+if strcmp(job.derivativesname,'<UNDEFINED>'), job.derivativesname = ''; end
+out.bidsderivatives = fullfile(out.bidsdir,'derivatives',job.derivativesname,['sub-' SCAN.name],['ses-' SCAN.session]);
+out.bidssession = fullfile(out.bidsdir,['sub-' SCAN.name],['ses-' SCAN.session]);
+
 if strcmp(SCAN.session,'none')
     out.relpath         = fullfile(['sub-' SCAN.name]);
 else
     out.relpath         = fullfile(['sub-' SCAN.name],['ses-' SCAN.session]);
 end
 
-if strcmp(job.derivativesname,'<UNDEFINED>'), job.derivativesname = ''; end
-out.bidsderivatives = fullfile(out.bidsdir,'derivatives','matlabbatch',['sub-' SCAN.name],['ses-' SCAN.session],job.derivativesname);
-out.bidssession = fullfile(out.bidsdir,['sub-' SCAN.name],['ses-' SCAN.session]);
-
 if ~isempty(job.derivativesname) && ~exist(out.bidsderivatives{1},'dir')
     mkdir(out.bidsderivatives{1})
 end
+
+outses = parseScan(SCAN);
+switch char(fieldnames(job.bids_ref_type))
+    case 'session_Nminus1'
+        if session ==1
+            idx_ref = session;
+        elseif ~strcmp(BIDS.subjects(session-1).name,BIDS.subjects(session).name)
+            idx_ref = session;
+        else
+            idx_ref = session-1;
+        end
+    case 'session_N1'
+        idx_ref = find(strcmp({BIDS.subjects.name},BIDS.subjects(session).name),1);
+    case 'sub_1'
+        idx_ref = 1;
+    case 'noref'
+        idx_ref = 0;
+end
+
+if idx_ref
+    outref = parseScan(BIDS.subjects(idx_ref));
+    disp(['Reference Subject = ' BIDS.subjects(idx_ref).name])
+    disp(['Reference Session = ' BIDS.subjects(idx_ref).session])
+end
+
+% add files to out
+ff = fieldnames(outses);
+for iff = 1:length(ff)
+    out.(ff{iff}) = outses.(ff{iff});
+end
+
+if idx_ref
+    ff = fieldnames(outref);
+    for iff = 1:length(ff)
+        out.(['Reference_' ff{iff}]) = outref.([ff{iff}]);
+    end
+end
+
+
+
+
+function out = parseScan(SCAN)
+
+% ADD OUTPUT DIRECTORIES
 
 % LOOP OVER MODALITIES AND EXTRACT PATIENT DATA FILENAME AND METADATA
 % list = {'anat','T1w',...
