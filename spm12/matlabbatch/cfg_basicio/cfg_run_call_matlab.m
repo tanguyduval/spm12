@@ -54,14 +54,34 @@ if ischar(cmd)
             % do computation, return results in variable out
             in  = cell(size(job.inputs));
             for k = 1:numel(in)
-                in{k} = job.inputs{k}.(char(fieldnames(job.inputs{k})));
+                fname = job.inputs{k}.(char(fieldnames(job.inputs{k})));
+                if strcmp(char(fieldnames(job.inputs{k})),'imagesbranch')
+                    ref = fname.images{1};
+                    in{k} = load_nii_data(ref);
+                else
+                    fname = fname.(char(setdiff(fieldnames(fname),'help')));
+                    if length(fname)==1
+                        in{k} = fname{1};
+                    else
+                        in{k} = fname;
+                    end
+                end
             end
             out.outputs = cell(size(job.outputs));
             [out.outputs{:}] = feval(job.fun, in{:});
+            % Save outputs as NIFTI
+            for k = 1:numel(out.outputs)
+                if isfield(job.outputs{k},'filterbranch') && isfield(job.outputs{k}.filterbranch.filter,'nifti') && ( isnumeric(out.outputs{k}) || islogical(out.outputs{k}))
+                    fname = fullfile(char(job.outputs{k}.filterbranch.directory),char(job.outputs{k}.filterbranch.filename));
+                    save_nii_v2(out.outputs{k},fname,ref)
+                    out.outputs{k} = fname;
+                end
+            end
+
             % make sure output filenames are cellstr arrays, not char
             % arrays
             for k = 1:numel(out.outputs)
-                if isfield(job.outputs{k},'filter') && isa(out.outputs{k},'char')
+                if isfield(job.outputs{k},'filterbranch') && isa(out.outputs{k},'char')
                     out.outputs{k} = cellstr(out.outputs{k});
                 end
             end
@@ -90,9 +110,14 @@ if ischar(cmd)
             % determine outputs, return cfg_dep array in variable dep
             for k = 1:numel(job.outputs)
                 dep(k)            = cfg_dep;
-                dep(k).sname      = sprintf('Call MATLAB: output %d - %s %s', k, char(fieldnames(job.outputs{k})), char(fieldnames(job.outputs{k}.(char(fieldnames(job.outputs{k}))))));
+                dep(k).sname      = sprintf('output %d - %s', k, char(job.outputs{k}.(char(fieldnames(job.outputs{k}))).help));
                 dep(k).src_output = substruct('.','outputs','{}',{k});
-                dep(k).tgt_spec   = cfg_findspec({{'strtype','e', char(fieldnames(job.outputs{k})), char(fieldnames(job.outputs{k}.(char(fieldnames(job.outputs{k})))))}});
+                switch char(fieldnames(job.outputs{k}))
+                    case 'filterbranch'
+                        dep(k).tgt_spec   = cfg_findspec({{'strtype','e', 'filter', char(fieldnames(job.outputs{k}.filterbranch.filter))}});
+                    case 'strtypebranch'
+                        dep(k).tgt_spec   = cfg_findspec({{'strtype','e', 'strtype', char(fieldnames(job.outputs{k}.strtypebranch.strtype))}});
+                end
             end
             varargout{1} = dep;
         case 'check'
