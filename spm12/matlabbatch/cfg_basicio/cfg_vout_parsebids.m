@@ -51,13 +51,12 @@ out = cfg_run_parsebids(job);
 
 if ~isempty(job.derivativesname)
     dep(6)            = cfg_dep;
-    dep(6).sname      = [fullfile('BIDS/derivatives', job.derivativesname, out.relpath) filesep];
+    dep(6).sname      = [fullfile('BIDS/derivatives', job.derivativesname, 'sub-name','ses-session') filesep];
     dep(6).src_output = substruct('.','bidsderivatives');
     dep(6).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});
 end
 
 if isempty(out), return; end
-dep(2).sname      = [fullfile('BIDS',out.relpath) filesep];
 for ff = setdiff(fieldnames(out)',{'bidsdir','bidsderivatives','sub','ses','relpath'})
     dep(end+1)            = cfg_dep;
     dep(end).sname      = strrep(strrep(ff{1},'_meta',' metadata'),'_',': ');

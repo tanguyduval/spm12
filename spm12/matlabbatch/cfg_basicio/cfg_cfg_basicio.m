@@ -120,7 +120,44 @@ derivativesname.help    = {'Name for the new directory.',...
 derivativesname.strtype = 's';
 derivativesname.val     = {''};
 derivativesname.num     = [0  Inf];
-% -----------------------------
+% ---------------------------------------------------------------------
+% session_N1 First Session
+% ---------------------------------------------------------------------
+reffirstsub        = cfg_entry;
+reffirstsub.tag    = 'sub_1';
+reffirstsub.name   = 'First Subject (first session)';
+reffirstsub.val    = {true};
+% ---------------------------------------------------------------------
+% session_N1 First Session
+% ---------------------------------------------------------------------
+reffirstsession        = cfg_entry;
+reffirstsession.tag    = 'session_N1';
+reffirstsession.name   = 'First Session (in each subject)';
+reffirstsession.val    = {true};
+% ---------------------------------------------------------------------
+% session_Nminus1 Session N-1
+% ---------------------------------------------------------------------
+refprevioussession        = cfg_entry;
+refprevioussession.tag    = 'session_Nminus1';
+refprevioussession.name   = 'Session N-1';
+refprevioussession.val    = {true};
+% ---------------------------------------------------------------------
+% bidsreference Reference scan
+% ---------------------------------------------------------------------
+noref         = cfg_const;
+noref.tag     = 'noref';
+noref.name    = 'No reference';
+noref.val     = {true};
+% ---------------------------------------------------------------------
+% bidsreference Reference scan
+% ---------------------------------------------------------------------
+bidsreference         = cfg_choice;
+bidsreference.tag     = 'bids_ref_type';
+bidsreference.name    = 'Reference type';
+bidsreference.values  = {noref refprevioussession reffirstsession reffirstsub};
+bidsreference.val     = {noref};
+bidsreference.help    = {'Reference scan in your dependency tree. 1 = first session of first subject',...
+                       'Preview ''Parent directory'' to list all sessions'};
 % ---------------------------------------------------------------------
 % cfg_parsebids Parse BIDS Directory
 % ---------------------------------------------------------------------
@@ -129,7 +166,7 @@ parentbids.preview    = @(parent) cfg_preview_parsebids(parent);
 cfg_parsebids         = cfg_exbranch;
 cfg_parsebids.tag     = 'cfg_parsebids';
 cfg_parsebids.name    = 'Parse BIDS Directory';
-cfg_parsebids.val     = {parentbids, bidssession derivativesname};
+cfg_parsebids.val     = {parentbids, bidssession derivativesname bidsreference};
 cfg_parsebids.help    = {'Parse a BIDS directory.'};
 cfg_parsebids.prog    = @cfg_run_parsebids;
 cfg_parsebids.vout    = @cfg_vout_parsebids;
