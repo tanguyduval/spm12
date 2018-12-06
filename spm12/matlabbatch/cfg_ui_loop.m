@@ -9,8 +9,9 @@ if isfield(matlabbatch{1},'cfg_basicio') && isfield(matlabbatch{1}.cfg_basicio,'
     BIDS = cfg_run_parsebids(job);
     matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids = rmfield(matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids,'bids_ses_type');
     errorsubs = {};
-    % loop over subjects
-    for ii=1:length(BIDS.subjects)
+    hh = listdlg('PromptString','Select subjects to process','ListString',strcat({BIDS.subjects.name}','_', {BIDS.subjects.session}'));
+
+    for ii=hh
         matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses_type.bids_sesnum = ii;
         try
             spm_jobman('run',matlabbatch);
