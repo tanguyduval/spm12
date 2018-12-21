@@ -8,7 +8,7 @@ Tanguy Duval
 * [Installation](#install)
 * [Features](#features)
 	- [BIDS parser module: create a participant BIDS pipeline in just a minute](#bids-parser-module)
-	- [Generic System call (run FSL, ANTS, Freesurfer, ... or your own app)](#generic-system-call)
+	- [Boutiques (run FSL, ANTS, Freesurfer, ... or any command)](#generic-system-call)
   
 ## INSTALL
 
@@ -37,15 +37,10 @@ install;
   
   <img src="spm12/help/extended/fillGUNZIP.png" width="500">
   
-  - Add additional modules or just click **run**. Subject 1 session 1 will be processed.  
+  - Add additional modules or just click the **run** icon. Subject 1 session 1 will be processed.  
   Results will be saved into `bidsfolder/derivatives/matlabbatch/sub-NAME/ses-SESSION/DWI/`
-  - **Save** your single participant pipeline using the save icon and loop over your subjects/sessions
-  ````matlab
-  for isub=1:5
-  matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = isub;
-  spm_jobman('run',matlabbatch)
-  end
-  ````
+  - **Save** your single participant pipeline using the save icon
+  - Click on the **run for all subjects** icon (double play icon) to loop across all subjects/sessions
   - **Share** your pipeline (copy paste to your Matlab command line):
   ````matlab
   % smooth diffusion data
@@ -67,7 +62,7 @@ matlabbatch{4}.spm.util.disp.data(1) = cfg_dep('Smooth: Smoothed Images', substr
 cfg_ui(matlabbatch)
   ````
   
-### Generic System call
+### Boutiques
 *(run FSL, ANTS, Freesurfer, ... or your own app)*
   - install and run docker (https://www.docker.com/get-started). highly recommanded. On windows you need windows 10. 
   - Download a 4D image https://openneuro.org/crn/datasets/ds001378/snapshots/00003/files/sub-control01:ses-01:dwi:sub-control01_ses-01_dwi.nii.gz
