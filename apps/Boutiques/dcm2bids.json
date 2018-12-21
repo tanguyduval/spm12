@@ -1,0 +1,82 @@
+{
+	"tool-version": "1.0.0",
+	"name": "dcm2bids",
+	"author": "",
+	"description": [
+		"usage: dcm2bids [-h] -d DICOM_DIR [DICOM_DIR ...] -p PARTICIPANT [-s SESSION]            ",
+		"                -c CONFIG [-o OUTPUT_DIR] [--forceDcm2niix] [--clobber]                  ",
+		"                [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-a ANONYMIZER]                 ",
+		"                                                                                         ",
+		"optional arguments:                                                                      ",
+		"  -h, --help            show this help message and exit                                  ",
+		"  -d DICOM_DIR [DICOM_DIR ...], --dicom_dir DICOM_DIR [DICOM_DIR ...]                    ",
+		"                        DICOM directory(ies)                                             ",
+		"  -p PARTICIPANT, --participant PARTICIPANT                                              ",
+		"                        Participant ID                                                   ",
+		"  -s SESSION, --session SESSION                                                          ",
+		"                        Session ID                                                       ",
+		"  -c CONFIG, --config CONFIG                                                             ",
+		"                        JSON configuration file (see example\/config.json)                ",
+		"  -o OUTPUT_DIR, --output_dir OUTPUT_DIR                                                 ",
+		"                        Output BIDS directory, Default: current directory                ",
+		"  --forceDcm2niix       Overwrite old temporary dcm2niix output if it exists             ",
+		"  --clobber             Overwrite output if it exists                                    ",
+		"  -l {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}",
+		"                        Set logging level                                                ",
+		"  -a ANONYMIZER, --anonymizer ANONYMIZER                                                 ",
+		"                        Link to a shell script to anonymize each anat images             ",
+		"                        The call syntax must be `anonymizer input output`                ",
+		"                        e.g., pydeface.py                                                ",
+		"                                                                                         ",
+		"            Documentation at https:\/\/github.com\/cbedetti\/Dcm2Bids                        ",
+		"                                                                                         ",
+		"                                                                                         "
+	],
+	"container-image": {
+		"image": "taduv\/dcm2bids",
+		"type": "docker"
+	},
+	"inputs": [
+		{
+			"description": "DICOM directory(ies)",
+			"value-key": "[DICOM_DIRECTORY(IES)]",
+			"type": "String",
+			"optional": 0,
+			"id": "dicom_directory(ies)",
+			"name": "DICOM directory(ies)"
+		},
+		{
+			"description": "Output Directory",
+			"value-key": "[OUTPUT_DIRECTORY]",
+			"type": "String",
+			"optional": 0,
+			"id": "output_directory",
+			"name": "Output Directory"
+		},
+		{
+			"description": "Participant ID",
+			"value-key": "[PARTICIPANT_ID]",
+			"type": "String",
+			"optional": 0,
+			"id": "participant_id",
+			"name": "Participant ID"
+		},
+		{
+			"description": "config file",
+			"value-key": "[CONFIG_FILE]",
+			"type": "File",
+			"optional": 0,
+			"id": "config_file",
+			"name": "config file"
+		},
+		{
+			"description": "Session",
+			"value-key": "[SESSION]",
+			"type": "String",
+			"optional": 0,
+			"id": "session",
+			"name": "Session"
+		}
+	],
+	"command-line": "dcm2bids -d [DICOM_DIRECTORY(IES)] -o [OUTPUT_DIRECTORY] -p [PARTICIPANT_ID] -c [CONFIG_FILE] -s [SESSION]"
+}

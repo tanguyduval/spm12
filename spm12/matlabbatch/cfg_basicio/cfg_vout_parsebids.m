@@ -61,7 +61,7 @@ for ff = setdiff(fieldnames(out)',{'bidsdir','bidsderivatives','sub','ses','relp
     dep(end+1)            = cfg_dep;
     dep(end).sname      = strrep(strrep(ff{1},'_meta',' metadata'),'_',': ');
     dep(end).src_output = substruct('.',ff{1});
-    if strcmp(ff{1}(end-4:end),'_meta')
+    if strcmp(ff{1}(end-4:end),'_meta') || strcmp(ff{1}(1:min(end,4)),'tsv_')
         dep(end).tgt_spec   = cfg_findspec({{'class','cfg_entry', 'strtype','e'}});
     else
         dep(end).tgt_spec   = cfg_findspec({{'class','cfg_files', 'strtype','e'}});

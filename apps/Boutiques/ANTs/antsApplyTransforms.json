@@ -1,0 +1,80 @@
+{
+	"tool-version": "1.0.0",
+	"name": "antsApplyTransforms",
+	"author": "",
+	"description": [
+		"                                                                                                    ",
+		"COMMAND:                                                                                            ",
+		"     antsApplyTransforms                                                                            ",
+		"                                                                                                    ",
+		"OPTIONS:                                                                                            ",
+		"     -d, --dimensionality 2\/3\/4                                                                     ",
+		"     -e, --input-image-type 0\/1\/2\/3                                                                 ",
+		"                            scalar\/vector\/tensor\/time-series                                        ",
+		"     -i, --input inputFileName                                                                      ",
+		"     -r, --reference-image imageFileName                                                            ",
+		"     -o, --output warpedOutputFileName                                                              ",
+		"                  [warpedOutputFileName or compositeDisplacementField,<printOutCompositeWarpFile=0>]",
+		"                  Linear[genericAffineTransformFile,<calculateInverse=0>]                           ",
+		"     -n, --interpolation Linear                                                                     ",
+		"                         NearestNeighbor                                                            ",
+		"                         MultiLabel[<sigma=imageSpacing>,<alpha=4.0>]                               ",
+		"                         Gaussian[<sigma=imageSpacing>,<alpha=1.0>]                                 ",
+		"                         BSpline[<order=3>]                                                         ",
+		"                         CosineWindowedSinc                                                         ",
+		"                         WelchWindowedSinc                                                          ",
+		"                         HammingWindowedSinc                                                        ",
+		"                         LanczosWindowedSinc                                                        ",
+		"                         GenericLabel[<interpolator=Linear>]                                        ",
+		"     -t, --transform transformFileName                                                              ",
+		"                     [transformFileName,useInverse]                                                 ",
+		"     -f, --default-value value                                                                      ",
+		"     -z, --static-cast-for-R value                                                                  ",
+		"     --float                                                                                        ",
+		"     -v, --verbose (0)\/1                                                                            ",
+		"     -h                                                                                             ",
+		"     --help                                                                                         ",
+		"                                                                                                    "
+	],
+	"container-image": {
+		"image": "bids\/mrtrix3_connectome",
+		"type": "docker"
+	},
+	"inputs": [
+		{
+			"description": "Moving image",
+			"value-key": "[MOVING_IMAGE]",
+			"type": "File",
+			"optional": 0,
+			"id": "moving_image",
+			"name": "Moving image"
+		},
+		{
+			"description": "Reference image",
+			"value-key": "[REFERENCE_IMAGE]",
+			"type": "File",
+			"optional": 0,
+			"id": "reference_image",
+			"name": "Reference image"
+		},
+		{
+			"description": "warpingfield",
+			"value-key": "[WARPINGFIELD]",
+			"type": "File",
+			"optional": 0,
+			"id": "warpingfield",
+			"name": "warpingfield"
+		}
+	],
+	"output-files": [
+		{
+			"description": "warped image",
+			"value-key": "[WARPED_IMAGE]",
+			"path-template": "warpedimage.nii",
+			"optional": 0,
+			"id": "warped_image",
+			"name": "warped image"
+		}
+	],
+	"command-line": "antsApplyTransforms --dimensionality  3  -i [MOVING_IMAGE] -r [REFERENCE_IMAGE] -o [WARPED_IMAGE] -t [WARPINGFIELD]"
+}

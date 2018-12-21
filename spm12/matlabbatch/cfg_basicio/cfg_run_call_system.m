@@ -79,6 +79,11 @@ if ischar(cmd)
                     for itok = 1:length(tokens)
                         job.outputs{io}.outputs.string = strrep(job.outputs{io}.outputs.string,tokens{itok},in{str2double(tokens{itok}(3:end))}{1});
                     end
+                    tokens = regexp(job.outputs{io}.outputs.directory{1},'(%i\d)','match');
+                    for itok = 1:length(tokens)
+                        job.outputs{io}.outputs.directory = strrep(job.outputs{io}.outputs.directory,tokens{itok},in{str2double(tokens{itok}(3:end))}{1});
+                    end
+
                     out.outputs{io} = {fullfile(job.outputs{io}.outputs.directory{1},job.outputs{io}.outputs.string)};
                     alreadyexist = alreadyexist & exist(out.outputs{io}{1},'file');
                 end
@@ -104,7 +109,8 @@ if ischar(cmd)
             end
             for k = 1:numel(job.outputs)
                 mountdir = [mountdir '-v "' fullfile(job.outputs{k}.outputs.directory{1},fileparts(job.outputs{k}.outputs.string)) ':/o' num2str(k) '" '];
-                dockeroutfname{k} = strrep(fullfile(job.outputs{io}.outputs.directory{1},job.outputs{k}.outputs.string),[fileparts(fullfile(job.outputs{io}.outputs.directory{1},job.outputs{k}.outputs.string)) filesep],['/o' num2str(k) '/']);
+                ofullfname = fullfile(job.outputs{k}.outputs.directory{1},job.outputs{k}.outputs.string);
+                dockeroutfname{k} = strrep(ofullfname,[fileparts(ofullfname) filesep],['/o' num2str(k) '/']);
             end
 
             
@@ -152,6 +158,13 @@ if ischar(cmd)
                         delete([out.outputs{io}{1} '.gz'])
                     end
                 end
+                for io=1:length(out.outputs)
+                    if ~exist(out.outputs{io}{1},'file') && strcmp(out.outputs{io}{1}(end-2:end),'.gz') && exist(out.outputs{io}{1}(1:end-3),'file')
+                        gzip(out.outputs{io}{1}(1:end-3));
+                        delete(out.outputs{io}{1}(1:end-3));
+                    end
+                end
+
             end
             
             if nargout > 0
@@ -189,20 +202,22 @@ if ischar(cmd)
                 cfg_message('ischar:check', 'Subcmd must be a string.');
             end
         case 'save'
-            job = local_getjob(varargin{1},false);
-            cmdcell = strsplit(job.cmd);
-
-            [directory, tree] = generatetree(['System.' cmdcell{1}],cfg_cfg_call_system);
-            if isempty(tree), return; end
-            
-            % generate cfg_CML_def
-            jobstr = generatecfgdef(tree,job);
-            cfg_def_fname = fullfile(directory,['cfg_' tree{1} '_def.m']);
-            fid = fopen(cfg_def_fname,'wt');
-            fprintf(fid, 'function %s = cfg_%s_def\n',lower(tree{1}),tree{1});
-            fprintf(fid, '%s\n',jobstr{:});
-            fclose(fid);
-            disp(['files added in ' directory])
+             job = local_getjob(varargin{1},false);
+             parentfolder = textread('apps_savepath.txt','%s');
+             cfg2boutique(job,parentfolder{1})
+%             cmdcell = strsplit(job.cmd);
+% 
+%             [directory, tree] = generatetree(['System.' cmdcell{1}],cfg_cfg_call_system);
+%             if isempty(tree), return; end
+%             
+%             % generate cfg_CML_def
+%             jobstr = generatecfgdef(tree,job);
+%             cfg_def_fname = fullfile(directory,['cfg_' tree{1} '_def.m']);
+%             fid = fopen(cfg_def_fname,'wt');
+%             fprintf(fid, 'function %s = cfg_%s_def\n',lower(tree{1}),tree{1});
+%             fprintf(fid, '%s\n',jobstr{:});
+%             fclose(fid);
+%             disp(['files added in ' directory])
             
         otherwise
             cfg_message('unknown:cmd', 'Unknown command ''%s''.', cmd);

@@ -60,7 +60,7 @@ if ischar(cmd)
                     in{k} = load_nii_data(ref);
                 else
                     fname = fname.(char(setdiff(fieldnames(fname),'help')));
-                    if length(fname)==1
+                    if iscell(fname) && length(fname)==1
                         in{k} = fname{1};
                     else
                         in{k} = fname;

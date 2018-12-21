@@ -7,3 +7,5 @@ cfg_util('addapp', cfg, def);
 cfg_util('addapp', cfg, def);
 [cfg, def] = cfg_mlbatch_appcfg_4;
 cfg_util('addapp', cfg, def);
+[cfg, def] = cfg_mlbatch_appcfg_5;
+cfg_util('addapp', cfg, def);

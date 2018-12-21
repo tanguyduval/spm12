@@ -78,7 +78,12 @@ out.ses             = SCAN.session;
 if strcmp(job.derivativesname,'<UNDEFINED>'), job.derivativesname = ''; end
 out.bidsderivatives = fullfile(out.bidsdir,'derivatives',job.derivativesname,['sub-' SCAN.name],['ses-' SCAN.session]);
 out.bidssession = fullfile(out.bidsdir,['sub-' SCAN.name],['ses-' SCAN.session]);
-
+if isfield(SCAN,'tsv')
+    ftsv            = fieldnames(SCAN.tsv);
+    for fff = 1:length(ftsv)
+        out.(['tsv_' ftsv{fff}]) = SCAN.tsv.(ftsv{fff});
+    end
+end
 if strcmp(SCAN.session,'none')
     out.relpath         = fullfile(['sub-' SCAN.name]);
 else

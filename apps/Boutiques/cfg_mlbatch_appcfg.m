@@ -16,5 +16,5 @@ if ~isdeployed
     addpath(p);
 end
 % run configuration main & def function, return output
-cfg = cfg_System;
-def = cfg_System_def;
+parentfolder = [fileparts(fileparts(mfilename('fullpath'))) filesep];
+[cfg,def] = boutiques2cfg(parentfolder);

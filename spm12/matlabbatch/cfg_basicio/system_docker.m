@@ -1,4 +1,4 @@
-function system_docker(dockerimage, cmd, varargin)
+function varargout = system_docker(dockerimage, cmd, varargin)
 % Run a system function on a docker container
 % system_docker(dockerimage, cmd, varargin)
 %
@@ -48,11 +48,14 @@ end
 if isempty(dockerimage)
     disp(['Running terminal command: ' cmd])
     [status, stdout]=system(cmd,'-echo');
-    if status, error(sprintf('%s\n\n%s',cmd,stdout)); end
+    if nargout==0 && status, error(sprintf('%s\n\n%s',cmd,stdout)); end
 else % docker
     cmdcell = strsplit(cmd);
     cmddocker = ['docker run --entrypoint ' cmdcell{1} ' ' mountdir dockerimage ' ' strjoin(cmdcell(2:end))];
     disp(['Running terminal command: ' cmddocker])
     [status, stdout]=system(cmddocker,'-echo');
-    if status, error(sprintf('%s\n\nRun on docker:\n%s\n\n%s',cmd,cmddocker,stdout)); end
+    if nargout==0 && status, error(sprintf('%s\n\nRun on docker:\n%s\n\n%s',cmd,cmddocker,stdout)); end
 end
+
+varargout{1} = status;
+varargout{2} = stdout;

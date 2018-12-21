@@ -1,0 +1,53 @@
+{
+	"tool-version": "1.0.0",
+	"name": "eddy_correct",
+	"author": "",
+	"description": [
+		"                                                                  ",
+		"Usage: eddy_correct <4dinput> <4doutput> <reference_no> [<interp>]",
+		"       Choose interp from {trilinear,spline} def - trilinear      ",
+		"                                                                  ",
+		"                                                                  "
+	],
+	"container-image": {
+		"image": "bids\/mrtrix3_connectome",
+		"type": "docker"
+	},
+	"inputs": [
+		{
+			"description": "4D dwi: the input diffusion-weighted image",
+			"value-key": "[4D_DWI]",
+			"type": "File",
+			"optional": 0,
+			"id": "4d_dwi",
+			"name": "4D dwi"
+		},
+		{
+			"description": "reference number: volume that will be used as a reference for the registration",
+			"value-key": "[REFERENCE_NUMBER]",
+			"type": "Number",
+			"optional": 0,
+			"id": "reference_number",
+			"name": "reference number"
+		},
+		{
+			"description": "interpolation: Choose interp from {trilinear,spline}",
+			"value-key": "[INTERPOLATION]",
+			"type": "String",
+			"optional": 0,
+			"id": "interpolation",
+			"name": "interpolation"
+		}
+	],
+	"output-files": [
+		{
+			"description": "4D dwi: the output eddy corrected DWI image",
+			"value-key": "[4D_DWI]",
+			"path-template": "",
+			"optional": 0,
+			"id": "4d_dwi",
+			"name": "4D dwi"
+		}
+	],
+	"command-line": "eddy_correct [4D_DWI] [4D_DWI] [REFERENCE_NUMBER] [INTERPOLATION]"
+}
