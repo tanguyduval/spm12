@@ -65,14 +65,26 @@ command.val     = {'denoising'};
 command.strtype = 's';
 command.num     = [0 inf];
 command.help    = {'Used in QC table'};
+
+% ---------------------------------------------------------------------
+% nii nii
+% ---------------------------------------------------------------------
+slices         = cfg_entry;
+slices.tag     = 'slices';
+slices.name    = 'Slices';
+slices.val     = {0};
+slices.strtype = 'w';
+slices.num     = [0 inf];
+slices.help    = {'slices to select. 0: auto mode (6 regularly spaced slices)'};
+
 % ---------------------------------------------------------------------
 % QC QC
 % ---------------------------------------------------------------------
 htmlqc         = cfg_exbranch;
 htmlqc.tag     = 'html';
 htmlqc.name    = 'HTML report (SCT team)';
-htmlqc.val     = {nii mask dir subject contrast, command};
-htmlqc.prog = @(job) qc_write(job.dir,job.subject,job.nifti,job.mask,job.contrast,job.command);
+htmlqc.val     = {nii mask dir subject contrast, command, slices};
+htmlqc.prog = @(job) qc_write(job.dir,job.subject,job.nifti,job.mask,job.contrast,job.command, job.slices);
 htmlqc.help = {'interactive html report developed by the SCT team'};
 
 % ---------------------------------------------------------------------
