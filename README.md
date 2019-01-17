@@ -145,11 +145,13 @@ docker run -it -v C:\Users\TONIC\code\spm12:/spm12 -v F:\STEMRI_NIFTI_RAW:/bids 
 
 #### GUI:
 ###### Windows
-1. install Xserveur (Xming on windows)
-2. 
+1. install Xserveur (e.g. Xming)
+2. open `command window` (Start-->cmd-->Enter)
+3. Get IP address: `ipconfig`
+4. Run docker
 ````
-export IP = ???
-docker run -it -v C:\Users\TONIC\data\ds001378:bids -v C:\Users\TONIC\code\spm12:/spm12 --entrypoint "/spm12/spm_standalone_linux/run_spm12.sh" -e DISPLAY=$IP:0 spm12 /opt/mcr/v92 eval cfg_ui
+set IP=???
+docker run -it --entrypoint "/spm12/spm_standalone_linux/run_spm12.sh" -e DISPLAY=%IP%:0 spm12 /opt/mcr/v92 eval cfg_ui
 ````
 
 ###### MacOs
