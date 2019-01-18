@@ -45,18 +45,22 @@ install;
   ````matlab
   % smooth diffusion data
 clear matlabbatch
+
 matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.parent = '<UNDEFINED>';
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = 1;
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.name = 'DWI';
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses_type.bids_sesnum = 1;
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.derivativesname = 'DWI';
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ref_type.noref = true;
 matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.files(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
-matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.outdir(1) = cfg_dep('Parse BIDS Directory: BIDS output path for derivatives', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
+matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.outdir(1) = cfg_dep('Parse BIDS Directory: BIDS\derivatives\Smooth\sub-name\ses-session\', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
 matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.keep = true;
 matlabbatch{3}.spm.spatial.smooth.data(1) = cfg_dep('Gunzip Files: Gunzipped Files', substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{':'}));
 matlabbatch{3}.spm.spatial.smooth.fwhm = [8 8 8];
 matlabbatch{3}.spm.spatial.smooth.dtype = 0;
 matlabbatch{3}.spm.spatial.smooth.im = 0;
 matlabbatch{3}.spm.spatial.smooth.prefix = 's';
-matlabbatch{4}.spm.util.disp.data(1) = cfg_dep('Smooth: Smoothed Images', substruct('.','val', '{}',{3}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','files'));
+matlabbatch{4}.QC.imtool3D.nifti(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
+matlabbatch{4}.QC.imtool3D.nifti(2) = cfg_dep('Smooth: Smoothed Images', substruct('.','val', '{}',{3}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','files'));
+matlabbatch{4}.QC.imtool3D.mask = '';
 
 % open gui
 cfg_ui(matlabbatch)
