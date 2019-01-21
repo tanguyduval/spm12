@@ -1,19 +1,19 @@
 %-----------------------------------------------------------------------
-% Job saved on 17-Oct-2018 13:32:14 by cfg_util (rev $Rev: 6942 $)
-% mrtrix mrtrix3 - Unknown
-% sct Spinal Cord Toolbox - Unknown
+% Job saved on 21-Jan-2019 17:01:57 by cfg_util (rev $Rev: 6942 $)
+% QC Quality Control - Unknown
+% matlab Matlab - Unknown
+% boutiques Boutiques - Unknown
 % spm SPM - SPM12 (7219)
 % cfg_basicio BasicIO - Unknown
-% fsl FSL - Unknown
-% boutiques boutiques - Unknown
 %-----------------------------------------------------------------------
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.parent = {'F:\STEMRI_NIFTI_RAW'};
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses = 1;
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.name = 'mrtrix3';
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.parent = '<UNDEFINED>';
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses_type.bids_sesnum = 1;
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.derivativesname = 'DWI';
+matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ref_type.noref = true;
 matlabbatch{2}.boutiques.mrtrix3.dwidenoise.inputs_{1}.anyfilebranch.help = '4D dwi: the input diffusion-weighted image';
 matlabbatch{2}.boutiques.mrtrix3.dwidenoise.inputs_{1}.anyfilebranch.anyfile(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
 matlabbatch{2}.boutiques.mrtrix3.dwidenoise.outputs_{1}.outputs.help = '4D dwi: the output denoised DWI image';
-matlabbatch{2}.boutiques.mrtrix3.dwidenoise.outputs_{1}.outputs.directory(1) = cfg_dep('Parse BIDS Directory: BIDS output path for derivatives', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
+matlabbatch{2}.boutiques.mrtrix3.dwidenoise.outputs_{1}.outputs.directory(1) = cfg_dep('Parse BIDS Directory: BIDS\derivatives\DWI\sub-name\ses-session\', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
 matlabbatch{2}.boutiques.mrtrix3.dwidenoise.outputs_{1}.outputs.string = 'dwi_denoised.nii';
 matlabbatch{2}.boutiques.mrtrix3.dwidenoise.cmd = 'dwidenoise -force i1 o1';
 matlabbatch{2}.boutiques.mrtrix3.dwidenoise.usedocker_.dockerimg = 'bids/mrtrix3_connectome';
@@ -24,7 +24,7 @@ matlabbatch{3}.boutiques.fsl.eddy_correct.inputs_{2}.evaluatedbranch.evaluated =
 matlabbatch{3}.boutiques.fsl.eddy_correct.inputs_{3}.stringbranch.help = 'interpolation: Choose interp from {trilinear,spline}';
 matlabbatch{3}.boutiques.fsl.eddy_correct.inputs_{3}.stringbranch.string = 'trilinear';
 matlabbatch{3}.boutiques.fsl.eddy_correct.outputs_{1}.outputs.help = '4D dwi: the output eddy corrected DWI image';
-matlabbatch{3}.boutiques.fsl.eddy_correct.outputs_{1}.outputs.directory(1) = cfg_dep('Parse BIDS Directory: BIDS output path for derivatives', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
+matlabbatch{3}.boutiques.fsl.eddy_correct.outputs_{1}.outputs.directory(1) = cfg_dep('Parse BIDS Directory: BIDS\derivatives\DWI\sub-name\ses-session\', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
 matlabbatch{3}.boutiques.fsl.eddy_correct.outputs_{1}.outputs.string = 'dwi_eddy.nii';
 matlabbatch{3}.boutiques.fsl.eddy_correct.cmd = 'eddy_correct i1 o1 i2 i3';
 matlabbatch{3}.boutiques.fsl.eddy_correct.usedocker_.dockerimg = 'bids/mrtrix3_connectome';
@@ -35,7 +35,7 @@ matlabbatch{4}.boutiques.mrtrix3.dwi2mask.inputs_{2}.anyfilebranch.anyfile(1) = 
 matlabbatch{4}.boutiques.mrtrix3.dwi2mask.inputs_{3}.anyfilebranch.help = 'bvals file (in FSL format)';
 matlabbatch{4}.boutiques.mrtrix3.dwi2mask.inputs_{3}.anyfilebranch.anyfile(1) = cfg_dep('Parse BIDS Directory: dwi: bval', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_bval'));
 matlabbatch{4}.boutiques.mrtrix3.dwi2mask.outputs_{1}.outputs.help = '3D Mask: the output whole-brain mask image';
-matlabbatch{4}.boutiques.mrtrix3.dwi2mask.outputs_{1}.outputs.directory(1) = cfg_dep('Parse BIDS Directory: BIDS output path for derivatives', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
+matlabbatch{4}.boutiques.mrtrix3.dwi2mask.outputs_{1}.outputs.directory(1) = cfg_dep('Parse BIDS Directory: BIDS\derivatives\DWI\sub-name\ses-session\', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
 matlabbatch{4}.boutiques.mrtrix3.dwi2mask.outputs_{1}.outputs.string = 'mask_brain.nii.gz';
 matlabbatch{4}.boutiques.mrtrix3.dwi2mask.cmd = 'dwi2mask -fslgrad i2 i3 i1 o1';
 matlabbatch{4}.boutiques.mrtrix3.dwi2mask.usedocker_.dockerimg = 'bids/mrtrix3_connectome';
@@ -48,11 +48,11 @@ matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.inputs_{3}.anyfilebranch.anyfile(1) 
 matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.inputs_{4}.anyfilebranch.help = '3D Mask';
 matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.inputs_{4}.anyfilebranch.anyfile(1) = cfg_dep('dwi2mask: dwi2mask: output 1 - mask_brain.nii.gz', substruct('.','val', '{}',{4}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','outputs', '{}',{1}));
 matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.outputs_{1}.outputs.help = '3D Diffusion Tensor';
-matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.outputs_{1}.outputs.directory(1) = cfg_dep('Parse BIDS Directory: BIDS output path for derivatives', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
+matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.outputs_{1}.outputs.directory(1) = cfg_dep('Parse BIDS Directory: BIDS\derivatives\DWI\sub-name\ses-session\', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
 matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.outputs_{1}.outputs.string = 'tensor.nii';
 matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.cmd = 'dwi2tensor -fslgrad i2 i3 -mask i4 i1 o1';
 matlabbatch{5}.boutiques.mrtrix3.dwi2tensor.usedocker_.dockerimg = 'bids/mrtrix3_connectome';
-matlabbatch{6}.cfg_basicio.file_dir.dir_ops.cfg_mkdir.parent(1) = cfg_dep('Parse BIDS Directory: BIDS output path for derivatives', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
+matlabbatch{6}.cfg_basicio.file_dir.dir_ops.cfg_mkdir.parent(1) = cfg_dep('Parse BIDS Directory: BIDS\derivatives\DWI\sub-name\ses-session\', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
 matlabbatch{6}.cfg_basicio.file_dir.dir_ops.cfg_mkdir.name = 'tensorfit';
 matlabbatch{7}.boutiques.mrtrix3.tensor2metric.inputs_{1}.anyfilebranch.help = '4D dwi: the input diffusion-weighted image';
 matlabbatch{7}.boutiques.mrtrix3.tensor2metric.inputs_{1}.anyfilebranch.anyfile(1) = cfg_dep('dwi2tensor: dwi2tensor: output 1 - tensor.nii', substruct('.','val', '{}',{5}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','outputs', '{}',{1}));
