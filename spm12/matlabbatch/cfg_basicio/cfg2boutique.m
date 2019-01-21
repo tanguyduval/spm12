@@ -4,10 +4,11 @@ function json = cfg2boutique(job,parentfolder)
 cmdcell = strsplit(job.cmd);
 Name = ['Boutiques.' cmdcell{1}];
 % get user pref
-prompt = {'Module name:', 'Author', 'Documentation:'};
+prompt = {'Module name (use dot (.) separator between submenus):', 'Author', 'Documentation:'};
 title = 'Save Command configuration';
-dims = [1 35; 1 35; 12 100];
-definput = {Name, '', ''};
+dims = [1 100; 1 35; 12 100];
+Author = char(java.lang.System.getProperty('user.name'));
+definput = {Name, Author, ''};
 try
 [~,desc] = system_docker(job.usedocker_.dockerimg,[cmdcell{1} ' -h']);
 listbalise = strfind(desc,sprintf('\b')); % in Mrtrix3
@@ -22,8 +23,9 @@ tree{1} = 'Boutiques';
 json.tool_0x2D_version      = '1.0.0';
 json.name                   = tree{end};
 json.author                 = answer{2};
-json.description            = answer{3};
-
+str                         = cellstr(answer{3});
+json.description            = sprintf('%s\n',str{:});
+json.schema_0x2D_version    = '0.5';
 % Container field
 if isfield(job,'usedocker_')
     if isfield(job.usedocker_,'dockerimg')
@@ -40,6 +42,8 @@ for ii = 1:length(job.inputs_)
     name = strsplit(description, ':'); name = name{1};
     Default = job.inputs_{ii}.(type).(strrep(type,'branch',''));
     KEY =  strrep(upper(name),' ','_');
+    KEY =  strrep(KEY,'(','_');
+    KEY =  strrep(KEY,')','_');
     KEY = ['[' KEY ']'];
     switch type
         case 'anyfilebranch'
@@ -58,7 +62,7 @@ for ii = 1:length(job.inputs_)
     end
     json.inputs{ii}.value_0x2D_key       = KEY;
     json.inputs{ii}.type                 = type;
-    json.inputs{ii}.optional             = 0;
+    json.inputs{ii}.optional             = false;
     json.inputs{ii}.id                   = lower(KEY(2:end-1));
     json.inputs{ii}.name                 = name;
     
@@ -76,13 +80,20 @@ for ii = 1:length(job.outputs_)
     for io = 1:length(job.inputs_)
         Default = strrep(Default,['%i' num2str(io)],json.inputs{io}.value_0x2D_key);
     end
+    
+    if isempty(Default) % path-template is mandatory
+        Default = './';
+    end
     KEY =  strrep(upper(name),' ','_');
+    KEY =  strrep(KEY,'(','_');
+    KEY =  strrep(KEY,')','_');
+
     KEY = ['[' KEY ']'];
     
     json.output_0x2D_files{ii}.description          = description;
     json.output_0x2D_files{ii}.value_0x2D_key       = KEY;
     json.output_0x2D_files{ii}.path_0x2D_template	= Default;
-    json.output_0x2D_files{ii}.optional             = 0;
+    json.output_0x2D_files{ii}.optional             = false;
     json.output_0x2D_files{ii}.id                   = lower(KEY(2:end-1));
     json.output_0x2D_files{ii}.name                 = name;
     
@@ -100,7 +111,7 @@ json.command_0x2D_line      = cmdfinal;
 folder = fullfile(parentfolder,tree{1:end-1});
 mkdir(folder)
 fname = fullfile(folder,[tree{end} '.json']);
-savejson([],json,fname)
+savejson([],json,'FileName',fname,'ParseLogical',true)
 end
 
 function TT = checkJson(ff,json)

@@ -1,16 +1,9 @@
 {
 	"tool-version": "1.0.0",
 	"name": "Git",
-	"author": "Tanguy Duval",
-	"description": [
-		"Clone last extended spm12 version                                              ",
-		"usage: git [--version] [--help] [-C <path>] [-c <name>=<value>]                ",
-		"           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]     ",
-		"           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare] ",
-		"           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]        ",
-		"           <command> [<args>]                                                  ",
-		"                                                                               "
-	],
+	"author": "TONIC",
+	"description": "Code versioning tool. Download the last version of spm",
+	"schema-version": "0.5",
 	"container-image": {
 		"image": "ceregousa\/ubuntu-git",
 		"type": "docker"
@@ -18,12 +11,9 @@
 	"inputs": [
 		{
 			"description": "Output Directory",
-			"default-value": [
-				"C:\\Users\\TONIC\\Desktop\\spm12"
-			],
 			"value-key": "[OUTPUT_DIRECTORY]",
 			"type": "String",
-			"optional": 0,
+			"optional": false,
 			"id": "output_directory",
 			"name": "Output Directory"
 		}

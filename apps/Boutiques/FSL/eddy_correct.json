@@ -1,50 +1,45 @@
 {
 	"tool-version": "1.0.0",
 	"name": "eddy_correct",
-	"author": "",
-	"description": [
-		"                                                                  ",
-		"Usage: eddy_correct <4dinput> <4doutput> <reference_no> [<interp>]",
-		"       Choose interp from {trilinear,spline} def - trilinear      ",
-		"                                                                  ",
-		"                                                                  "
-	],
+	"author": "TONIC",
+	"description": "\nUsage: eddy_correct <4dinput> <4doutput> <reference_no> [<interp>]\n       Choose interp from {trilinear,spline} def - trilinear\n\n\n",
+	"schema-version": "0.5",
 	"container-image": {
 		"image": "bids\/mrtrix3_connectome",
 		"type": "docker"
 	},
 	"inputs": [
 		{
-			"description": "4D dwi: the input diffusion-weighted image",
+			"description": "4D dwi",
 			"value-key": "[4D_DWI]",
 			"type": "File",
-			"optional": 0,
+			"optional": false,
 			"id": "4d_dwi",
 			"name": "4D dwi"
 		},
 		{
-			"description": "reference number: volume that will be used as a reference for the registration",
+			"description": "reference number",
 			"value-key": "[REFERENCE_NUMBER]",
 			"type": "Number",
-			"optional": 0,
+			"optional": false,
 			"id": "reference_number",
 			"name": "reference number"
 		},
 		{
-			"description": "interpolation: Choose interp from {trilinear,spline}",
+			"description": "interpolation",
 			"value-key": "[INTERPOLATION]",
 			"type": "String",
-			"optional": 0,
+			"optional": false,
 			"id": "interpolation",
 			"name": "interpolation"
 		}
 	],
 	"output-files": [
 		{
-			"description": "4D dwi: the output eddy corrected DWI image",
+			"description": "4D dwi",
 			"value-key": "[4D_DWI]",
-			"path-template": "",
-			"optional": 0,
+			"path-template": ".\/",
+			"optional": false,
 			"id": "4d_dwi",
 			"name": "4D dwi"
 		}

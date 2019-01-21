@@ -104,6 +104,17 @@ if ischar(cmd)
             fprintf(fid, '%s\n',jobstr{:});
             fclose(fid);
             disp(['files added in ' directory])
+            
+            % copy matlab files and dependencies
+            appssavepath = textread('apps_savepath.txt','%s');
+            spmfolder = fileparts(which('spm'));
+            listmfiles = matlab.codetools.requiredFilesAndProducts(func2str(job.fun))';
+            rm = contains(listmfiles,appssavepath{1}) | contains(listmfiles,spmfolder);
+            listmfiles(rm)=[];
+            mkdir(fullfile(appssavepath{1},tree{:}));
+            for ifile = 1:length(listmfiles)
+                copyfile(listmfiles{ifile},fullfile(appssavepath{1},tree{:}))
+            end
 
         case 'vout'
             job = local_getjob(varargin{1});

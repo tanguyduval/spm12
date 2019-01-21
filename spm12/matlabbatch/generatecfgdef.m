@@ -1,5 +1,8 @@
 function jobstr = generatecfgdef(tree, job)
 
+% remove dependencies
+job = rmdep(job);
+
 if exist(['cfg_' tree{1} '_def'],'file')
     cfgdef = eval(['cfg_' tree{1} '_def']);
     tree = genvarname(lower(tree));
@@ -23,4 +26,18 @@ if exist(['cfg_' tree{1} '_def'],'file')
     
 else
     jobstr = gencode(job,strjoin(cellfun(@genvarname,lower(tree),'uni',0),'.'))';
+end
+
+function job = rmdep(job)
+for ff = fieldnames(job)'
+    switch class(job.(ff{1}))
+        case 'cell'
+            for ic = 1:length(job.(ff{1}))
+                job.(ff{1}){ic} = rmdep(job.(ff{1}){ic});
+            end
+        case 'struct'
+            job.(ff{1}) = rmdep(job.(ff{1}));
+        case 'cfg_dep'
+            job = rmfield(job,ff{1});
+    end
 end

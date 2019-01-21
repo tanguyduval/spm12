@@ -6,7 +6,9 @@ cfg = cfg_cfg_call_system;
 cfg.name = json.name;
 cfg.tag = genvarname(lower(json.name));
 if isfield(json,'description')
-    cfg.help = cellstr(json.description);
+    try
+        cfg.help = strsplit(json.description,newline);
+    end
 end
 
 % DEF
@@ -104,7 +106,7 @@ if isfield(json,'output_0x2D_files')
                     json.output_0x2D_files{io}.path_0x2D_template = strrep(json.output_0x2D_files{io}.path_0x2D_template,inKey{ikey},['%i' num2str(ikey)]);
                 end
                 [path,file,ext]                     = fileparts(json.output_0x2D_files{io}.path_0x2D_template);
-                if isempty(path)
+                if isempty(path) || strcmp(path,'.')
                     def.outputs_{end}.outputs.directory = '<UNDEFINED>';
                 else
                     def.outputs_{end}.outputs.directory = {path};
