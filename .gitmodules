@@ -4,3 +4,6 @@
 [submodule "apps/Quality Control/imtool3D_td"]
 	path = apps/Quality Control/imtool3D_td
 	url = https://github.com/tanguyduval/imtool3D_td.git
+[submodule "apps/Boutiques"]
+	path = apps/Boutiques
+	url = https://github.com/tanguyduval/Boutiques.git
