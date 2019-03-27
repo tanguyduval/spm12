@@ -1,0 +1,4 @@
+*.asv
+spm/spm_standalone_linux/
+apps_savepath.txt
+spm_standalone_Mac
