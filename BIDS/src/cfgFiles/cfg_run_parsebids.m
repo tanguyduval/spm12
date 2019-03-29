@@ -170,7 +170,7 @@ for ii=1:2:length(list)
             out.(tag) = {nii_fname};
             
             % Special treatment for dmri
-            if strcmp(list{ii},'dwi')
+            if strcmp(list{ii},'dwi') && ~isempty(strfind(nii_fname,'_dwi.nii'))
                 out.dwi_bvec = {strrep(strrep(nii_fname,'.gz',''),'.nii','.bvec')};
                 out.dwi_bval = {strrep(strrep(nii_fname,'.gz',''),'.nii','.bval')};
             end
