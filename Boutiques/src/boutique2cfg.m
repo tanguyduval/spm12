@@ -87,9 +87,14 @@ for ii = 1:length(json.inputs)
             def.inputs_{end}.(type).(strrep(type,'branch','')) = '<UNDEFINED>';
         end
         % replace flag [FLAG] --> %i1
-        if ~isfield(json.inputs{ii},'command_0x2D_line_0x2D_flag'), json.inputs{ii}.command_0x2D_line_0x2D_flag = ''; end
+        if ~isfield(json.inputs{ii},'command_0x2D_line_0x2D_flag')
+            json.inputs{ii}.command_0x2D_line_0x2D_flag = ''; 
+        else
+            json.inputs{ii}.command_0x2D_line_0x2D_flag = [json.inputs{ii}.command_0x2D_line_0x2D_flag ' ']; 
+        end
         def.cmd = strrep(def.cmd,json.inputs{ii}.value_0x2D_key,[json.inputs{ii}.command_0x2D_line_0x2D_flag '%i' num2str(length(def.inputs_))]);
     else
+        def.cmd = strrep(def.cmd,[json.inputs{ii}.value_0x2D_key ' '],'');
         def.cmd = strrep(def.cmd,json.inputs{ii}.value_0x2D_key,'');
     end
 end
@@ -109,7 +114,7 @@ if isfield(json,'output_0x2D_files')
                 if isempty(path)
                     file = strrep(file,'\',filesep);
                     file = strrep(file,'/',filesep);
-                    [path,file,ext]                     = fileparts(file);
+                    [path,file,ext]                     = fileparts([file ext]);
                 end
                 if isempty(path) || strcmp(path,'.')
                     def.outputs_{end}.outputs.directory = '<UNDEFINED>';

@@ -14,8 +14,18 @@ title = 'Save Command configuration';
 dims = [1 100; 1 35; 12 100];
 Author = char(java.lang.System.getProperty('user.name'));
 definput = {Name, Author, ''};
-try
-[~,desc] = system_docker(job.usedocker_.dockerimg,[cmdcell{1} ' -h']);
+try % try to get help
+    try
+        [~,desc] = system_docker(job.usedocker_.dockerimg,[cmdcell{1}]);
+    catch
+        try
+            [~,desc] = system_docker(job.usedocker_.dockerimg,[cmdcell{1} ' -h']);
+        catch
+            try
+                [~,desc] = system_docker(job.usedocker_.dockerimg,[cmdcell{1} ' -help']);
+            end
+        end
+    end
 listbalise = strfind(desc,sprintf('\b')); % in Mrtrix3
 definput{3} = desc(setdiff(1:length(desc),[listbalise listbalise-1]));
 end

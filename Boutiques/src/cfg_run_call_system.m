@@ -194,7 +194,7 @@ if ischar(cmd)
             end
             
             if nargout > 0
-                outjob = cell(size(job.outputs));
+                outjob.outputs = cell(size(job.outputs));
                 outjob.outputs  = out;
                 varargout{1} = outjob;
             end
