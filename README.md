@@ -54,31 +54,34 @@ cfg_ui
   
   - Add additional modules or just click the **run** icon. Subject 1 session 1 will be processed.  
   Results will be saved into `bidsfolder/derivatives/matlabbatch/sub-NAME/ses-SESSION/DWI/`
-  - **Save** your single participant pipeline using the save icon
   - Click on the **run for all subjects** icon (double play icon) to loop across all subjects/sessions
-  - **Share** your pipeline (copy paste to your Matlab command line):
+  - **Save** your single participant pipeline using the save icon into a m-file
+  - **Share** your pipeline. For instance, you can simply copy paste these lines to your Matlab command line:
   ````matlab
   % smooth diffusion data
 clear matlabbatch
 
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.parent = '<UNDEFINED>';
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ses_type.bids_sesnum = 1;
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.derivativesname = 'DWI';
-matlabbatch{1}.cfg_basicio.file_dir.dir_ops.cfg_parsebids.bids_ref_type.noref = true;
-matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.files(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
-matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.outdir(1) = cfg_dep('Parse BIDS Directory: BIDS\derivatives\Smooth\sub-name\ses-session\', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','bidsderivatives'));
+matlabbatch{1}.cfg_BIDS.cfg_parsebids.parent = '<UNDEFINED>';
+matlabbatch{1}.cfg_BIDS.cfg_parsebids.bids_ses_type.bids_sesnum = 1;
+matlabbatch{1}.cfg_BIDS.cfg_parsebids.derivativesname = 'DWI';
+matlabbatch{1}.cfg_BIDS.cfg_parsebids.bids_ref_type.noref = true;
+matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.files(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
+matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.outdir = {''};
 matlabbatch{2}.cfg_basicio.file_dir.file_ops.cfg_gunzip_files.keep = true;
-matlabbatch{3}.spm.spatial.smooth.data(1) = cfg_dep('Gunzip Files: Gunzipped Files', substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{':'}));
+matlabbatch{3}.spm.spatial.smooth.data(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
 matlabbatch{3}.spm.spatial.smooth.fwhm = [8 8 8];
 matlabbatch{3}.spm.spatial.smooth.dtype = 0;
 matlabbatch{3}.spm.spatial.smooth.im = 0;
 matlabbatch{3}.spm.spatial.smooth.prefix = 's';
-matlabbatch{4}.QC.imtool3D.nifti(1) = cfg_dep('Parse BIDS Directory: dwi: dwi', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','dwi_dwi'));
+matlabbatch{4}.QC.imtool3D.nifti(1) = cfg_dep('Gunzip Files: Gunzipped Files', substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{':'}));
 matlabbatch{4}.QC.imtool3D.nifti(2) = cfg_dep('Smooth: Smoothed Images', substruct('.','val', '{}',{3}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','files'));
-matlabbatch{4}.QC.imtool3D.mask = '';
+matlabbatch{4}.QC.imtool3D.mask = {''};
 
-% open gui
-cfg_ui(matlabbatch)
+% open Batch editor if not opened
+cfg_ui
+% load pipeline
+cfg_util('initjob',matlabbatch)
+cfg_ui
   ````
   
 ### Boutiques
