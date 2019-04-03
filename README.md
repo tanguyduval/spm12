@@ -26,8 +26,9 @@ addpath(fullfile('spm12-apps-master','QualityControl')
 % run
 cfg_ui
 ````
-     [R2014a or older] In spm Batch Editor: 
-  `File-->Add Application-->select cfg_mlbatch_appcfg.m` in each folder
+
+[R2014a or older] In spm Batch Editor: 
+`File-->Add Application-->select cfg_mlbatch_appcfg.m` in each folder
 
 ## FEATURES
 ### BIDS parser module
