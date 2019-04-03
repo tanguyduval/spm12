@@ -14,16 +14,18 @@ Tanguy Duval
   1. Install spm12 if you don't have it: https://www.fil.ion.ucl.ac.uk/spm/software/spm12/
   2. [R2014b or later] Copy-Paste in your Matlab command line:
 ````matlab
-% change directory to default Matlab path
+% CHANGE DIRECTORY to default Matlab path
 cd(userpath)
-% download
+% DOWNLOAD spm-apps
 websave('spm12-apps.zip','https://github.com/tanguyduval/spm12-apps/archive/master.zip')
-unzip spm12_apps.zip
-% add to Matlab path
-addpath(fullfile('spm12-apps-master','BIDS')
-addpath(fullfile('spm12-apps-master','Boutiques')
-addpath(fullfile('spm12-apps-master','QualityControl')
-% run
+unzip spm12-apps.zip
+% ADD to Matlab path
+addpath(fullfile('spm12-apps-master','BIDS'))
+addpath(fullfile('spm12-apps-master','Boutiques'))
+addpath(fullfile('spm12-apps-master','QualityControl'))
+savepath
+% RUN spm Batch Editor
+cfg_util('initcfg')
 cfg_ui
 ````
 
