@@ -12,7 +12,7 @@ Tanguy Duval
   
 ## INSTALL
   1. Install spm12 if you don't have it: https://www.fil.ion.ucl.ac.uk/spm/software/spm12/
-  2. [R2014b or later] Copy-Paste in your Matlab command line:
+  2. [R2014b or later] **Copy-Paste** in your Matlab command line:
 ````matlab
 % CHANGE DIRECTORY to default Matlab path
 cd(userpath)
@@ -56,7 +56,7 @@ cfg_ui
   Results will be saved into `bidsfolder/derivatives/matlabbatch/sub-NAME/ses-SESSION/DWI/`
   - Click on the **run for all subjects** icon (double play icon) to loop across all subjects/sessions
   - **Save** your single participant pipeline using the save icon into a m-file
-  - **Share** your pipeline. For instance, you can simply copy paste this saved pipeline to your Matlab command line:
+  - **Share** your pipeline. For instance, you can simply **Copy-Paste** this saved pipeline to your Matlab command line:
   ````matlab
   % BIDS PIPELINE EXAMPLE: smooth diffusion data
 clear matlabbatch
