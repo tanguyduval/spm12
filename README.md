@@ -60,12 +60,17 @@ cfg_ui
   
 ### Boutiques
 *(run FSL, ANTS, Freesurfer, ... or your own app)*
-  - install and run docker (https://www.docker.com/get-started). highly recommanded. On windows you need windows 10. 
-  - Download a 4D image https://openneuro.org/crn/datasets/ds001378/snapshots/00003/files/sub-control01:ses-01:dwi:sub-control01_ses-01_dwi.nii.gz
-  - open the matlabbatch using command `cfg_ui`
-  - **Add** a new module Call System Command
-  <img src="doc/addSYSTEM.png" width="500">
+  - install and run docker (https://www.docker.com/get-started). highly recommanded. 
+  *Note: On windows 8 and older, install docker toolbox: https://docs.docker.com/toolbox/toolbox_install_windows/*
   
+##### Use pre-existing Boutiques files
+  - Download a 4D image https://openneuro.org/crn/datasets/ds001378/snapshots/00003/files/sub-control01:ses-01:dwi:sub-control01_ses-01_dwi.nii.gz
+  - open the Batch Editor using command `cfg_ui`
+  - **Use** a fslmaths>Tmean module to average across time:
+  <img src="doc/usesavedSYSTEM.png" width="500">
+  
+##### Create a Custom Boutiques file
+- **Add** a new Generic module  
   - **Fill** the module as follows  
        *Use Docker: docker images with preinstalled neuroimaging softwares can be found on https://hub.docker.com/   
                    `bids/mrtrix3-connectome` includes ANTS MRtrix3 and FSL
@@ -83,7 +88,6 @@ cfg_ui
 cfg_util('initcfg')
 cfg_ui
 ````
-
   - **Use** your preset module in an other pipeline
   <img src="doc/usesavedSYSTEM.png" width="500">
 
