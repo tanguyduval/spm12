@@ -56,7 +56,7 @@ cfg_ui
   Results will be saved into `bidsfolder/derivatives/matlabbatch/sub-NAME/ses-SESSION/DWI/`
   - Click on the **run for all subjects** icon (double play icon) to loop across all subjects/sessions
   - **Save** your single participant pipeline using the save icon into a m-file
-  - **Share** your pipeline. For instance, you can simply copy paste these lines to your Matlab command line:
+  - **Share** your pipeline. For instance, you can simply copy paste this saved pipeline to your Matlab command line:
   ````matlab
   % smooth diffusion data
 clear matlabbatch
