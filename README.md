@@ -58,7 +58,7 @@ cfg_ui
   - **Save** your single participant pipeline using the save icon into a m-file
   - **Share** your pipeline. For instance, you can simply copy paste this saved pipeline to your Matlab command line:
   ````matlab
-  % smooth diffusion data
+  % BIDS PIPELINE EXAMPLE: smooth diffusion data
 clear matlabbatch
 
 matlabbatch{1}.cfg_BIDS.cfg_parsebids.parent = '<UNDEFINED>';
