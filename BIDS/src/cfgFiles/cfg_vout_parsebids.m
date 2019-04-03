@@ -9,6 +9,17 @@ function dep = cfg_vout_parsebids(job)
 %_______________________________________________________________________
 
 % Tanguy Duval
+h_cfg_ui = findobj('Type','figure','Tag','cfg_ui');
+t = findobj(h_cfg_ui,'Type','uitoolbar');
+if isempty(findobj(t,'Tag','TbFileRunBIDS'))
+    try
+        icodoublearrow = load('icodoublearrow.mat');
+    uipushtool(t,'TooltipString','Run Batch for all subjects',...
+        'Tag','TbFileRunBIDS',...
+        'ClickedCallback','cfg_ui_loop(guidata(gcbo))',...
+        'CData',icodoublearrow.icon);
+    end
+end
 
 dep               = cfg_dep;
 dep(1)            = cfg_dep;
