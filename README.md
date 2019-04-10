@@ -15,6 +15,7 @@ Tanguy Duval
   2. [R2014b or later] **Copy-Paste** in your Matlab command line:
 ````matlab
 % CHANGE DIRECTORY to default Matlab path
+userpath('reset')
 cd(userpath)
 % DOWNLOAD spm-apps
 websave('spm12-apps.zip','https://github.com/tanguyduval/spm12-apps/archive/master.zip')
