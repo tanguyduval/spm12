@@ -80,9 +80,10 @@ cfg_ui
   <img src="doc/fillSYSTEM.png" width="500">
    
    - **RUN** the command using the green play button
-   - **Save** your preset module as a Boutiques descriptor https://boutiques.github.io
-  <img src="doc/saveSYSTEM.png" width="500">
-  <img src="doc/savenameSYSTEM.png" width="300">
+   - **Save** your preset module as a Boutiques descriptor https://boutiques.github.io<br/>
+  <img src="doc/saveSYSTEM.png" width="300"><br/>
+  <img src="doc/savenameSYSTEM.png" width="400">
+  
   
   - **Reload** modules
 ````matlab
