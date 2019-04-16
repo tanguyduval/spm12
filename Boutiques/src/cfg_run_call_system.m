@@ -199,6 +199,18 @@ if ischar(cmd)
                 varargout{1} = outjob;
             end
         case 'vout'
+            h_cfg_ui = findobj('Type','figure','Tag','cfg_ui');
+            t = findobj(h_cfg_ui,'Type','uitoolbar');
+            if isempty(findobj(t,'Tag','TbFileSaveBoutiques'))
+                try
+                    icodoublearrow = load('Boutiqueslogo.mat');
+                    uipushtool(t,'TooltipString','Save Boutiques Descriptor',...
+                        'Tag','TbFileSaveBoutiques',...
+                        'ClickedCallback','cfg_save_call_system(guidata(gcbo))',...
+                        'CData',icodoublearrow.icon);
+                end
+            end
+
             job = local_getjob(varargin{1},true);
             % initialise empty cfg_dep array
             dep = cfg_dep;
