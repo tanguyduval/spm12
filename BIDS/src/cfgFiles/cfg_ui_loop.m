@@ -27,5 +27,5 @@ if isfield(matlabbatch{1},'cfg_BIDS') && isfield(matlabbatch{1}.cfg_BIDS,'cfg_pa
     end
     
 else
-    warndlg('The first module must be a BasicIO>Dir Operation>Parse BIDS directory','Could not run over all subjects')
+    warndlg('The first module must be a BIDS>Parse BIDS directory','Could not run over all subjects')
 end
