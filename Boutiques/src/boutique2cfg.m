@@ -58,6 +58,7 @@ end
 inKey = {};
 if isfield(json,'inputs')
 def.inputs_ = {};
+cfg.val{1}.val = {};
 for ii = 1:length(json.inputs)
     if ~json.inputs{ii}.optional
         inKey{end+1} = json.inputs{ii}.value_0x2D_key;
@@ -65,36 +66,36 @@ for ii = 1:length(json.inputs)
         switch json.inputs{ii}.type
             case 'File'
                 type = 'anyfilebranch';
+                cfg.val{1}.val{end+1} = cfg.val{1}.values{3};
             case 'String'
                 if strfind(lower(json.inputs{ii}.name),'directory')
                     type = 'directorybranch';
+                    cfg.val{1}.val{end+1} = cfg.val{1}.values{4};
                 else
                     type = 'stringbranch';
+                    cfg.val{1}.val{end+1} = cfg.val{1}.values{2};
                 end
             case 'Number'
                 type = 'evaluatedbranch';
+                cfg.val{1}.val{end+1} = cfg.val{1}.values{1};
         end
         if isfield(json.inputs{ii},'value_0x2D_choices')
             json.inputs{ii}.value_0x2D_choices = cellfun(@char,json.inputs{ii}.value_0x2D_choices,'uni',0);
             json.inputs{ii}.name = [json.inputs{ii}.name ': {' strjoin(json.inputs{ii}.value_0x2D_choices,'/') '}'];
         end
         def.inputs_{end+1}.(type).help  = json.inputs{ii}.name;
-
+        cfg.val{1}.val{end}.val{1}.val  = {json.inputs{ii}.name};
         % default-value
         if isfield(json.inputs{ii},'default_0x2D_value')
             def.inputs_{end}.(type).(strrep(type,'branch','')) = json.inputs{ii}.default_0x2D_value;
+            cfg.val{1}.val{end}.val{2}.val = {json.inputs{ii}.default_0x2D_value};
         else
             def.inputs_{end}.(type).(strrep(type,'branch','')) = '<UNDEFINED>';
         end
         % replace flag [FLAG] --> %i1
-        if ~isfield(json.inputs{ii},'command_0x2D_line_0x2D_flag')
-            json.inputs{ii}.command_0x2D_line_0x2D_flag = ''; 
-        else
-            json.inputs{ii}.command_0x2D_line_0x2D_flag = [json.inputs{ii}.command_0x2D_line_0x2D_flag ' ']; 
-        end
+        if ~isfield(json.inputs{ii},'command_0x2D_line_0x2D_flag'), json.inputs{ii}.command_0x2D_line_0x2D_flag = ''; end
         def.cmd = strrep(def.cmd,json.inputs{ii}.value_0x2D_key,[json.inputs{ii}.command_0x2D_line_0x2D_flag '%i' num2str(length(def.inputs_))]);
     else
-        def.cmd = strrep(def.cmd,[json.inputs{ii}.value_0x2D_key ' '],'');
         def.cmd = strrep(def.cmd,json.inputs{ii}.value_0x2D_key,'');
     end
 end
@@ -106,6 +107,8 @@ if isfield(json,'output_0x2D_files')
     for io = 1:length(json.output_0x2D_files)
         if json.output_0x2D_files{io}.optional == 0
             def.outputs_{end+1}.outputs.help      = json.output_0x2D_files{io}.name;
+            cfg.val{2}.val{end+1} = cfg.val{2}.values{1};
+            cfg.val{2}.val{end}.val{1}.val = {json.output_0x2D_files{io}.name};
             if isfield(json.output_0x2D_files{io},'path_0x2D_template')
                 for ikey = 1:length(inKey)
                     json.output_0x2D_files{io}.path_0x2D_template = strrep(json.output_0x2D_files{io}.path_0x2D_template,inKey{ikey},['%i' num2str(ikey)]);
@@ -114,17 +117,19 @@ if isfield(json,'output_0x2D_files')
                 if isempty(path)
                     file = strrep(file,'\',filesep);
                     file = strrep(file,'/',filesep);
-                    [path,file,ext]                     = fileparts([file ext]);
+                    [path,file,ext]                     = fileparts(file);
                 end
                 if isempty(path) || strcmp(path,'.')
                     def.outputs_{end}.outputs.directory = '<UNDEFINED>';
                 else
                     def.outputs_{end}.outputs.directory = {path};
+                    cfg.val{2}.val{end}.val{2}.val = {{path}};
                 end
                 if isempty(file)
                     def.outputs_{end}.outputs.string    = '<UNDEFINED>';
                 else
                     def.outputs_{end}.outputs.string    = [file ext];
+                    cfg.val{2}.val{end}.val{3}.val = {[file ext]};
                 end
             else
                 def.outputs_{end}.outputs.directory = '<UNDEFINED>';
@@ -144,6 +149,10 @@ end
 
 if isfield(json,'container_0x2D_image') && strcmp(json.container_0x2D_image.type,'docker')
     def.usedocker_.dockerimg = json.container_0x2D_image.image;
+    cfg.val{4}.val{1}.val = {json.container_0x2D_image.image};
+else
+    cfg.val{4}.val{1}.val = {''};
 end
-        
+
+cfg.val{3}.val = {def.cmd};
         

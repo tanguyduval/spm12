@@ -18,5 +18,6 @@ end
 % run configuration main & def function, return output
 parentfolder = textread('boutiques_path.txt','%s');
 parentfolder = GetFullPath_v2(parentfolder,'auto',fileparts(which('boutiques_path.txt')));
-[cfg,def]    = boutiques2cfg(parentfolder{1});
-cfg.values   = [{cfg_cfg_call_system} cfg.values];
+cfg          = boutiques2cfg(parentfolder{1});
+cfg.values   = [{cfg_cfg_call_system} cfg.values]; % add Generic
+def = [];
