@@ -366,10 +366,13 @@ classdef imtool3D < handle
                 set(tool.handles.Histrange(3),'ButtonDownFcn',fun);
                 
                 %Create histogram checkbox
-                tool.handles.Tools.Hist     =   uicontrol(tool.handles.Panels.Tools,'Style','Checkbox','String','Hist?','Position',[buff buff 2.5*w w],'TooltipString','Show Histogram','BackgroundColor','k','ForegroundColor','w');
+                tool.handles.Tools.Hist     =   uicontrol(tool.handles.Panels.Tools,'Style','ToggleButton','String','','Position',[buff buff w w],'TooltipString','Show Colorbar');
+                MATLABdir = fullfile(toolboxdir('matlab'), 'icons');
+                icon_colorbar = makeToolbarIconFromPNG(fullfile(MATLABdir,'tool_colorbar.png'));
+                set(tool.handles.Tools.Hist,'CData',icon_colorbar)
                 fun=@(hObject,evnt) ShowHistogram(hObject,evnt,tool,wp,h);
                 set(tool.handles.Tools.Hist,'Callback',fun)
-                lp=buff+2.5*w;
+                lp=buff+w;
             else
                 lp=buff;
             end
@@ -393,8 +396,8 @@ classdef imtool3D < handle
             
             %Create view restore button
             tool.handles.Tools.ViewRestore           =   uicontrol(tool.handles.Panels.Tools,'Style','pushbutton','String','','Position',[lp buff w w],'TooltipString',sprintf('Reset Pan and Zoom\n(Right Click (Ctrl+Click) to Pan and Middle (Shift+Click) Click to zoom)'));
-            [iptdir, MATLABdir] = ipticondir;
-            icon_save = makeToolbarIconFromPNG([iptdir '/overview_zoom_in.png']);
+            MATLABdir = fullfile(toolboxdir('matlab'), 'icons');
+            icon_save = makeToolbarIconFromPNG('overview_zoom_in.png');
             set(tool.handles.Tools.ViewRestore,'CData',icon_save);
             fun=@(hobject,evnt) resetViewCallback(hobject,evnt,tool);
             set(tool.handles.Tools.ViewRestore,'Callback',fun)
@@ -460,7 +463,7 @@ classdef imtool3D < handle
             
             %Create Help Button
             pos = get(tool.handles.Panels.Tools,'Position');
-            tool.handles.Tools.Help             =   uicontrol(tool.handles.Panels.Tools,'Style','pushbutton','String','?','Position',[pos(3)-w-buff buff w w],'TooltipString','Help with imtool3D');
+            tool.handles.Tools.Help             =   uicontrol(tool.handles.Panels.Tools,'Style','pushbutton','String','?','Position',[pos(3)-w-buff buff w w],'TooltipString','Help with imtool3D','BackgroundColor',[0, 0.65, 1]);
             fun=@(hObject,evnt) displayHelp(hObject,evnt,tool);
             set(tool.handles.Tools.Help,'Callback',fun)
 
@@ -585,7 +588,6 @@ classdef imtool3D < handle
             % mask load
             tool.handles.Tools.maskLoad        = uicontrol(tool.handles.Panels.ROItools,'Style','togglebutton','Position',[buff pos(4)-(islct+4)*w w w], 'Value', 1, 'TooltipString', 'Load mask');
             icon_load = makeToolbarIconFromPNG([MATLABdir '/file_open.png']);
-            icon_load = min(1,max(0,imresize(icon_load,[16 16])));
             set(tool.handles.Tools.maskLoad ,'Cdata',icon_load)
             fun=@(hObject,evnt) loadMask(tool,hObject);
             set(tool.handles.Tools.maskLoad ,'Callback',fun)
@@ -613,7 +615,16 @@ classdef imtool3D < handle
             
             % set Image
             setImage(tool, varargin{:})
-
+            
+            % disable ROI tools if no image processing toolbox
+            result = license('test','image_toolbox');
+            if result==0
+                warning('Image processing toolbox is missing... ROI tools will not work')
+                set(findobj(tool.handles.Panels.ROItools,'type','uicontrol'),'visible','off');
+                set(tool.handles.Tools.maskLoad,'visible','on');
+                set(tool.handles.Tools.maskStats,'visible','on');
+                set(tool.handles.Tools.maskSelected,'visible','on');
+            end
         end
         
         function setPosition(tool,position)
@@ -642,7 +653,7 @@ classdef imtool3D < handle
             if isempty(mask) && (isempty(tool.mask) || size(tool.mask,1)~=size(tool.I{1},1) || size(tool.mask,2)~=size(tool.I{1},2) || size(tool.mask,3)~=size(tool.I{1},3))
                 tool.mask=zeros([size(tool.I{1},1) size(tool.I{1},2) size(tool.I{1},3)],'uint8');
             elseif ~isempty(mask)
-                if islogical(mask) && ~isempty(tool.mask)
+                if islogical(mask)
                     maskOld = tool.mask;
                     maskOld(maskOld==tool.maskSelected)=0;
                     if tool.lockMask
@@ -834,11 +845,11 @@ classdef imtool3D < handle
             end
             range = tool.Climits{1};
                
+            tool.Nvol = 1;
+            
             tool.I=I;
             
             tool.setMask(mask);
-            
-            tool.Nvol = 1;
 
             %Update the histogram
             if isfield(tool.handles,'HistAxes')
@@ -1337,7 +1348,7 @@ classdef imtool3D < handle
                 viewtype = get(tool.handles.Axes,'View');
                 if viewtype(1)==-90, I=rot90(I);  end
                 lims=get(h.Axes,'CLim');
-                I=gray2ind(mat2gray(I,lims),size(cmap,1));
+                I = uint8(max(0,min(1,(I-lims(1))/diff(lims)))*(size(cmap,1)-1));
                 
                 if FileName == 0
                 else
@@ -1443,14 +1454,14 @@ classdef imtool3D < handle
             drawnow;
             set(hObject, 'Enable', 'on');
             if exist('hdr','var')
-                path=fullfile(hdr.file_name,'Mask.nii.gz');
+                path=fullfile(fileparts(hdr.file_name),'Mask.nii.gz');
             else
                 path = 'Mask.nii.gz';
             end
             [FileName,PathName, ext] = uigetfile({'*.nii.gz','NIFTI file (*.nii.gz)';'*.mat','MATLAB File (*.mat)';'*.tif','Image Stack (*.tif)'},'Load Mask',path);
             if ext==1 % .nii.gz
                 if exist('hdr','var')
-                    Mask = load_nii_datas([{hdr.original} fullfile(PathName,FileName)]);
+                    Mask = load_nii_datas([{hdr} fullfile(PathName,FileName)]);
                 else
                     Mask = load_nii_datas(fullfile(PathName,FileName));
                 end
@@ -1515,10 +1526,12 @@ classdef imtool3D < handle
             set(tool.handles.SliceText,'String',['Vol: ' num2str(tool.Nvol) '/' num2str(length(tool.I)) '    Time: ' num2str(tool.Ntime) '/' num2str(size(tool.I{tool.Nvol},4)) '    Slice: ' num2str(n) '/' num2str(size(tool.I{tool.Nvol},tool.viewplane))])
 
             if isfield(tool.handles.Tools,'Hist') && get(tool.handles.Tools.Hist,'value')
-                range = tool.range{tool.Nvol};
-                In(In<range(1) | In>range(2)) = [];
+                In(In<tool.centers(1) | In>tool.centers(end)) = [];
                 err = (max(In(:)) - min(In(:)))*1e-10;
-                nelements=hist(In(In>(min(In(:))+err) & In<max(In(:)-err)),tool.centers); nelements=nelements./max(nelements);
+                nelements=hist(In(In>(min(In(:))+err) & In<max(In(:)-err)),tool.centers);
+                range = get(tool.handles.Axes,'Clim');
+                currentCenters = tool.centers>range(1) & tool.centers<range(2);
+                nelements=min(1,nelements./max(nelements(currentCenters)));
                 set(tool.handles.HistLine,'YData',nelements);
                 set(tool.handles.HistLine,'XData',tool.centers);
             end
@@ -1814,7 +1827,7 @@ function [I, position, h, range, tools, mask, enableHist] = parseinputs(varargin
 end
 
 function measureImageCallback(hObject,evnt,tool,type)
-
+removeBrushObject(tool)
 switch type
     case 'ellipse'
         h = getHandles(tool);
@@ -2140,7 +2153,7 @@ set(hObject,'Xlim',xlims+d(1),'Ylim',ylims-d(2))
 end
 
 function buttonUpFunction(src,evnt,tool,WBMF_old,WBUF_old)
-
+showSlice(tool)
 setptr(tool.handles.fig,'arrow');
 set(src,'WindowButtonMotionFcn',WBMF_old,'WindowButtonUpFcn',WBUF_old);
 
@@ -2331,25 +2344,32 @@ msg = {'imtool3D, written by Justin Solomon',...
        'https://github.com/tanguyduval/imtool3D_td',...
        '------------------------------------------',...
        '',...
-       'KEYBOARD SHORTCUTS:',...
-       'Left/right arrows                   navigate through time (4th dimension)',...
-       'Top/bottom arrows                   navigate through volumes (5th ',...
-       '                                     dimension)',...
-       'Middle (shift+) Click and drag      Zoom in/out',...
-       'Left            Click and drag      Contrast/Brightness',...
-       'Right  (ctrl+)  Click and drag      Pan',...
+       'MOUSE CONTROLS',...
+       'Middle Click and drag      Zoom in/out',...
+       'Left   Click and drag      Contrast/Brightness',...
+       'Right  Click and drag      Pan',...
        '',...
-       '[Spacebar]                          Show/hide mask',...
-       '[B]                                 Toolbrush ',...
-       '                                      * Middle click and drag to change',...
-       '                                        diameter',...
-       '                                      * Right click to erase',...
-       '[S]                                 Smart Toolbrush',...
-       '                                      double click to toggle between'...
-       '                                      bright or dark segmentation',...
-       '[Z]                                 Undo mask',...
-       '[1]                                 Select mask label 1',...
-       '[2]                                 Select mask label 2',...
+       'TRACKPAD CONTROLS',...
+       'Shift + Click and drag     Zoom in/out',...
+       'Left    Click and drag     Contrast/Brightness',...
+       'Ctrl  + Click and drag     Pan',...
+       '',...
+       'KEYBOARD SHORTCUTS:',...
+       'Left/right arrows          navigate through time (4th dimension)',...
+       'Top/bottom arrows          navigate through volumes (5th ',...
+       '                           dimension)',...
+       '',...
+       '[Spacebar]                 Show/hide mask',...
+       '[B]                        Toolbrush ',...
+       '                             * Middle click and drag to change',...
+       '                               diameter',...
+       '                             * Right click to erase',...
+       '[S]                        Smart Toolbrush',...
+       '                             double click to toggle between'...
+       '                             bright or dark segmentation',...
+       '[Z]                        Undo mask',...
+       '[1]                        Select mask label 1',...
+       '[2]                        Select mask label 2',...
        '[...]'};
    h = msgbox(msg);
    set(findall(h,'Type','Text'),'FontName','FixedWidth');

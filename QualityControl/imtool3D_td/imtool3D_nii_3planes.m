@@ -40,7 +40,7 @@ set(H.Tools.maskLoad,'Callback',@(hObject,evnt)loadMask(tool(3),hObject,hdr))
 Pos = get(tool(1).getHandles.Tools.Save,'Position');
 Pos(1) = Pos(1) + Pos(3)+5;
 Loadbut           =   uicontrol(tool(1).getHandles.Panels.Tools,'Style','pushbutton','String','','Position',Pos);
-[iptdir, MATLABdir] = ipticondir;
+MATLABdir = fullfile(toolboxdir('matlab'), 'icons');
 icon_load = makeToolbarIconFromPNG([MATLABdir '/file_open.png']);
 set(Loadbut,'CData',icon_load);
 fun=@(hObject,evnt) loadImage(hObject,tool,hdr,path);
@@ -75,9 +75,9 @@ if isequal(FileName,0)
     return;
 end
 if iscell(FileName)
-    dat = load_nii_datas([{hdr.original},fullfile(PathName,FileName)]);
+    dat = load_nii_datas([{hdr},fullfile(PathName,FileName)]);
 else
-    dat = load_nii_datas({hdr.original,fullfile(PathName,FileName)});
+    dat = load_nii_datas({hdr,fullfile(PathName,FileName)});
 end
 
 I = tool(1).getImage(1);
