@@ -3,13 +3,16 @@ function [cfg,def] = boutiques2cfg(parentfolder)
 
 cfg = [];
 def = struct;
-[list,path] = sct_tools_ls(fullfile(parentfolder,'*.json'),1,1,2,1);
+list = spm_select('FPListRec',parentfolder,'.*\.json$');
+list = cellstr(list);
+path = cellfun(@fileparts,list,'uni',0);
+
 for ifile = 1:length(list)
     % load boutique json
-    tree = strsplit(strrep(path{ifile}(1:end-1),[fileparts(parentfolder) filesep],''),filesep);
-    json = loadjson(list{ifile});
+    tree = strsplit(strrep(path{ifile},[fileparts(parentfolder) filesep],''),filesep);
+    json = spm_jsonread(list{ifile});
     % convert boutique to cfg
-    if isfield(json,'matlab_0x2D_version')
+    if isfield(json,'matlab_version')
         [icfg, idef] = boutiquematlab2cfg(json);
     else
         [icfg, idef] = boutique2cfg(json);

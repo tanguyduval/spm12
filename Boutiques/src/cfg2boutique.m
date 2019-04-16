@@ -35,17 +35,17 @@ tree = strsplit(answer{1},'.');
 tree{1} = 'Boutiques';
 
 % Tool Description
-json.tool_0x2D_version      = '1.0.0';
+json.tool_version      = '1.0.0';
 json.name                   = tree{end};
 json.author                 = answer{2};
 str                         = cellstr(answer{3});
 json.description            = sprintf('%s\n',str{:});
-json.schema_0x2D_version    = '0.5';
+json.schema_version    = '0.5';
 % Container field
 if isfield(job,'usedocker_')
     if isfield(job.usedocker_,'dockerimg')
-        json.container_0x2D_image.image   = job.usedocker_.dockerimg;
-        json.container_0x2D_image.type    = 'docker';
+        json.container_image.image   = job.usedocker_.dockerimg;
+        json.container_image.type    = 'docker';
     end
 end
 
@@ -73,9 +73,9 @@ for ii = 1:length(job.inputs_)
     
     json.inputs{ii}.description          = description;
     if ~strcmp(Default,'<UNDEFINED>')
-    json.inputs{ii}.default_0x2D_value   = Default;
+    json.inputs{ii}.default_value   = Default;
     end
-    json.inputs{ii}.value_0x2D_key       = KEY;
+    json.inputs{ii}.value_key       = KEY;
     json.inputs{ii}.type                 = type;
     json.inputs{ii}.optional             = false;
     json.inputs{ii}.id                   = lower(KEY(2:end-1));
@@ -93,7 +93,7 @@ for ii = 1:length(job.outputs_)
     ofile = strrep(job.outputs_{ii}.outputs.string,'<UNDEFINED>','');
     Default = fullfile(odir,ofile);
     for io = 1:length(job.inputs_)
-        Default = strrep(Default,['%i' num2str(io)],json.inputs{io}.value_0x2D_key);
+        Default = strrep(Default,['%i' num2str(io)],json.inputs{io}.value_key);
     end
     
     if isempty(Default) % path-template is mandatory
@@ -105,12 +105,12 @@ for ii = 1:length(job.outputs_)
 
     KEY = ['[' KEY ']'];
     
-    json.output_0x2D_files{ii}.description          = description;
-    json.output_0x2D_files{ii}.value_0x2D_key       = KEY;
-    json.output_0x2D_files{ii}.path_0x2D_template	= Default;
-    json.output_0x2D_files{ii}.optional             = false;
-    json.output_0x2D_files{ii}.id                   = lower(KEY(2:end-1));
-    json.output_0x2D_files{ii}.name                 = name;
+    json.output_files{ii}.description          = description;
+    json.output_files{ii}.value_key       = KEY;
+    json.output_files{ii}.path_template	= Default;
+    json.output_files{ii}.optional             = false;
+    json.output_files{ii}.id                   = lower(KEY(2:end-1));
+    json.output_files{ii}.name                 = name;
     
     cmdfinal = strrep(strrep(cmdfinal,['%o' num2str(ii)],KEY),[' o' num2str(ii)],[' ' KEY]);
 
@@ -120,23 +120,24 @@ end
 % ff = figure;
 % TT = checkJson(ff,json);
 
-json.command_0x2D_line      = cmdfinal;
+json.command_line      = cmdfinal;
 
 % save json
 folder = fullfile(parentfolder,tree{1:end-1});
 fname = fullfile(folder,[tree{end} '.json']);
 mkdir(fileparts(fname))
-savejson([],json,'FileName',fname,'ParseLogical',true)
+opts.indent = sprintf('\t');
+spm_jsonwrite(fname,json,opts)
 end
 
 function TT = checkJson(ff,json)
 TT = []; % important to allocate here!
 
 in = [json.inputs{:}];
-Tin = uitable(gcf,'Units','Normalized','Position',[0 0.5 1 0.5],'Data',[{in.description}', {in.value_0x2D_key}', {in.type}', {in.id}', {in.name}'],'ColumnName',{'Description                  ', 'value-key                ', 'type', 'id', 'name'});
+Tin = uitable(gcf,'Units','Normalized','Position',[0 0.5 1 0.5],'Data',[{in.description}', {in.value_key}', {in.type}', {in.id}', {in.name}'],'ColumnName',{'Description                  ', 'value-key                ', 'type', 'id', 'name'});
 Tin.ColumnEditable=true;
-out = [json.output_0x2D_files{:}];
-Tout = uitable(gcf,'Units','Normalized','Position',[0 0 1 0.5],'Data',[{out.description}', {out.value_0x2D_key}', {out.path_0x2D_template}', {out.id}', {out.name}'],'ColumnName',{'Description                  ', 'value-key                ', 'path-template                  ', 'id', 'name'});
+out = [json.output_files{:}];
+Tout = uitable(gcf,'Units','Normalized','Position',[0 0 1 0.5],'Data',[{out.description}', {out.value_key}', {out.path_template}', {out.id}', {out.name}'],'ColumnName',{'Description                  ', 'value-key                ', 'path-template                  ', 'id', 'name'});
 Tout.ColumnEditable=true;
 
 set(ff, 'CloseRequestFcn',@(h,e) myClose(h,e,Tin,Tout))

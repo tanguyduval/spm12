@@ -3,6 +3,9 @@ function varargout = system_docker(dockerimage, cmd, varargin)
 % system_docker(dockerimage, cmd, varargin)
 %
 % Example:
+%   Test if docker is running correctly
+%     system_docker('hello-world','/hello')
+%
 %   Get ANTS Registration help:
 %     system_docker('bids/mrtrix3_connectome', 'antsRegistration --help')
 %
