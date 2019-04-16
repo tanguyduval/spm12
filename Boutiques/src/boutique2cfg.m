@@ -12,19 +12,24 @@ if isfield(json,'description')
 end
 
 % DEF
-def.cmd = json.command_0x2D_line;
+def.cmd = json.command_line;
 
-% groups
+% groups (choose the first option as mandatory)
 if isfield(json,'groups')
 for ig = 1:length(json.groups)
-    if isfield(json.groups{ig},'one_0x2D_is_0x2D_required') && json.groups{ig}.one_0x2D_is_0x2D_required
-        if isfield(json.groups{ig},'mutually_0x2D_exclusive') && json.groups{ig}.mutually_0x2D_exclusive % set first as mandatory
+    if iscell(json.groups)
+        group = json.groups{ig};
+    else
+        group = json.groups(ig);
+    end
+    if isfield(group,'one_is_required') && group.one_is_required
+        if isfield(group,'mutually_exclusive') && group.mutually_exclusive % set first as mandatory
 %             newchoice        = cfg_choice;
-%             newchoice.name   = json.groups{ig}.name;
-%             newchoice.help   = {json.groups{ig}.description};
-%             newchoice.tag    = json.groups{ig}.id;
-            for ic = 1:length(json.groups{ig}.members)
-                inputic = strcmp(json.groups{ig}.members{ic},cellfun(@(x) x.id,json.inputs,'uni',0));
+%             newchoice.name   = group.name;
+%             newchoice.help   = {group.description};
+%             newchoice.tag    = group.id;
+            for ic = 1:length(group.members)
+                inputic = strcmp(group.members{ic},cellfun(@(x) x.id,json.inputs,'uni',0));
 %                 switch json.inputs{inputic}.type
 %                     case 'File'
 %                         Nval = cellfun(@(x) strcmp(x.tag,'anyfilebranch'),cfg.val{1}.values);
@@ -45,8 +50,8 @@ for ig = 1:length(json.groups)
           %  cfg.val{1}.values{end+1} = newchoice;
             
         else % set all as mandatory
-            for ic = 1:length(json.groups{ig}.members)
-                inputic = strcmp(json.groups{ig}.members{ic},cellfun(@(x) x.id,json.inputs,'uni',0));
+            for ic = 1:length(group.members)
+                inputic = strcmp(group.members{ic},cellfun(@(x) x.id,json.inputs,'uni',0));
                 json.inputs{inputic}.optional = 0;
             end
         end
@@ -58,92 +63,112 @@ end
 inKey = {};
 if isfield(json,'inputs')
 def.inputs_ = {};
+cfg.val{1}.val = {};
 for ii = 1:length(json.inputs)
-    if ~json.inputs{ii}.optional
-        inKey{end+1} = json.inputs{ii}.value_0x2D_key;
+    if iscell(json.inputs)
+        in = json.inputs{ii};
+    else
+        in = json.inputs(ii);
+    end
+    if ~in.optional
+        inKey{end+1} = in.value_key;
         % help
-        switch json.inputs{ii}.type
+        switch in.type
             case 'File'
                 type = 'anyfilebranch';
+                cfg.val{1}.val{end+1} = cfg.val{1}.values{3};
             case 'String'
-                if strfind(lower(json.inputs{ii}.name),'directory')
+                if strfind(lower(in.name),'directory')
                     type = 'directorybranch';
+                    cfg.val{1}.val{end+1} = cfg.val{1}.values{4};
                 else
                     type = 'stringbranch';
+                    cfg.val{1}.val{end+1} = cfg.val{1}.values{2};
                 end
             case 'Number'
                 type = 'evaluatedbranch';
+                cfg.val{1}.val{end+1} = cfg.val{1}.values{1};
         end
-        if isfield(json.inputs{ii},'value_0x2D_choices')
-            json.inputs{ii}.value_0x2D_choices = cellfun(@char,json.inputs{ii}.value_0x2D_choices,'uni',0);
-            json.inputs{ii}.name = [json.inputs{ii}.name ': {' strjoin(json.inputs{ii}.value_0x2D_choices,'/') '}'];
+        if isfield(in,'value_choices')
+            in.value_choices = cellfun(@char,in.value_choices,'uni',0);
+            in.name = [in.name ': {' strjoin(in.value_choices,'/') '}'];
         end
-        def.inputs_{end+1}.(type).help  = json.inputs{ii}.name;
-
+        def.inputs_{end+1}.(type).help  = in.name;
+        cfg.val{1}.val{end}.val{1}.val  = {in.name};
         % default-value
-        if isfield(json.inputs{ii},'default_0x2D_value')
-            def.inputs_{end}.(type).(strrep(type,'branch','')) = json.inputs{ii}.default_0x2D_value;
+        if isfield(in,'default_value')
+            def.inputs_{end}.(type).(strrep(type,'branch','')) = in.default_value;
+            cfg.val{1}.val{end}.val{2}.val = {in.default_value};
         else
             def.inputs_{end}.(type).(strrep(type,'branch','')) = '<UNDEFINED>';
         end
         % replace flag [FLAG] --> %i1
-        if ~isfield(json.inputs{ii},'command_0x2D_line_0x2D_flag')
-            json.inputs{ii}.command_0x2D_line_0x2D_flag = ''; 
-        else
-            json.inputs{ii}.command_0x2D_line_0x2D_flag = [json.inputs{ii}.command_0x2D_line_0x2D_flag ' ']; 
-        end
-        def.cmd = strrep(def.cmd,json.inputs{ii}.value_0x2D_key,[json.inputs{ii}.command_0x2D_line_0x2D_flag '%i' num2str(length(def.inputs_))]);
+        if ~isfield(in,'command_line_flag'), in.command_line_flag = ''; end
+        def.cmd = strrep(def.cmd,in.value_key,[in.command_line_flag '%i' num2str(length(def.inputs_))]);
     else
-        def.cmd = strrep(def.cmd,[json.inputs{ii}.value_0x2D_key ' '],'');
-        def.cmd = strrep(def.cmd,json.inputs{ii}.value_0x2D_key,'');
+        def.cmd = strrep(def.cmd,in.value_key,'');
     end
 end
 end
 
 % Outputs
-if isfield(json,'output_0x2D_files')
+if isfield(json,'output_files')
     def.outputs_ = {};
-    for io = 1:length(json.output_0x2D_files)
-        if json.output_0x2D_files{io}.optional == 0
-            def.outputs_{end+1}.outputs.help      = json.output_0x2D_files{io}.name;
-            if isfield(json.output_0x2D_files{io},'path_0x2D_template')
+    for io = 1:length(json.output_files)
+        if iscell(json.output_files)
+            out = json.output_files{io};
+        else
+            out = json.output_files(io);
+        end
+
+        if out.optional == 0
+            def.outputs_{end+1}.outputs.help      = out.name;
+            cfg.val{2}.val{end+1} = cfg.val{2}.values{1};
+            cfg.val{2}.val{end}.val{1}.val = {out.name};
+            if isfield(out,'path_template')
                 for ikey = 1:length(inKey)
-                    json.output_0x2D_files{io}.path_0x2D_template = strrep(json.output_0x2D_files{io}.path_0x2D_template,inKey{ikey},['%i' num2str(ikey)]);
+                    out.path_template = strrep(out.path_template,inKey{ikey},['%i' num2str(ikey)]);
                 end
-                [path,file,ext]                     = fileparts(json.output_0x2D_files{io}.path_0x2D_template);
+                [path,file,ext]                     = fileparts(out.path_template);
                 if isempty(path)
                     file = strrep(file,'\',filesep);
                     file = strrep(file,'/',filesep);
-                    [path,file,ext]                     = fileparts([file ext]);
+                    [path,file,ext]                     = fileparts(file);
                 end
                 if isempty(path) || strcmp(path,'.')
                     def.outputs_{end}.outputs.directory = '<UNDEFINED>';
                 else
                     def.outputs_{end}.outputs.directory = {path};
+                    cfg.val{2}.val{end}.val{2}.val = {{path}};
                 end
                 if isempty(file)
                     def.outputs_{end}.outputs.string    = '<UNDEFINED>';
                 else
                     def.outputs_{end}.outputs.string    = [file ext];
+                    cfg.val{2}.val{end}.val{3}.val = {[file ext]};
                 end
             else
                 def.outputs_{end}.outputs.directory = '<UNDEFINED>';
                 def.outputs_{end}.outputs.string = '<UNDEFINED>';
             end
-            if isfield(json.output_0x2D_files{io},'value_0x2D_key')
-                if ~isfield(json.output_0x2D_files{io},'command_0x2D_line_0x2D_flag'), json.output_0x2D_files{io}.command_0x2D_line_0x2D_flag = ''; end
-                def.cmd = strrep(def.cmd,json.output_0x2D_files{io}.value_0x2D_key,[json.output_0x2D_files{io}.command_0x2D_line_0x2D_flag '%o' num2str(length(def.outputs_))]);
+            if isfield(out,'value_key')
+                if ~isfield(out,'command_line_flag'), out.command_line_flag = ''; end
+                def.cmd = strrep(def.cmd,out.value_key,[out.command_line_flag '%o' num2str(length(def.outputs_))]);
             end
         else
-            if isfield(json.output_0x2D_files{io},'value_0x2D_key')
-                def.cmd = strrep(def.cmd,json.output_0x2D_files{io}.value_0x2D_key,'');
+            if isfield(out,'value_key')
+                def.cmd = strrep(def.cmd,out.value_key,'');
             end
         end
     end
 end
 
-if isfield(json,'container_0x2D_image') && strcmp(json.container_0x2D_image.type,'docker')
-    def.usedocker_.dockerimg = json.container_0x2D_image.image;
+if isfield(json,'container_image') && strcmp(json.container_image.type,'docker')
+    def.usedocker_.dockerimg = json.container_image.image;
+    cfg.val{4}.val{1}.val = {json.container_image.image};
+else
+    cfg.val{4}.val{1}.val = {''};
 end
-        
+
+cfg.val{3}.val = {def.cmd};
         
