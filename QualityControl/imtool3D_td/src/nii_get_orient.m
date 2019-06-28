@@ -1,5 +1,5 @@
-function orient = get_orient_hdr(hdr)
-% orient = get_orient_hdr(hdr) GET orientation from the header of a NIFTI file
+function [orient, orientletter] = nii_get_orient(hdr)
+% orient = nii_get_orient_hdr(hdr) GET orientation from the header of a NIFTI file
 %
 % OUTPUT
 %   orient      1x3 vector of integers
@@ -10,6 +10,10 @@ function orient = get_orient_hdr(hdr)
 %         5     % Anterior to Posterior
 %         6     % Superior to Inferior
 
+% nii struct
+if isfield(hdr,'img') && isfield(hdr,'hdr'), hdr = hdr.hdr; end
+
+% header struct
 if hdr.sform_code > 0
     useForm='s';
 elseif hdr.qform_code > 0
@@ -83,6 +87,30 @@ if affine_transform == 1
     orient = get_orient(inv_R);
 else
     orient = [1 2 3]; %
+end
+
+orientletter = {'' '' ''; '' '' ''};
+for ii = 1:3
+    switch orient(ii)
+        case 1
+            orientletter{1,ii} = 'L';
+            orientletter{2,ii} = 'R';
+        case 2
+            orientletter{1,ii} = 'P';
+            orientletter{2,ii} = 'A';
+        case 3
+            orientletter{1,ii} = 'I';
+            orientletter{2,ii} = 'S';
+        case 4
+            orientletter{1,ii} = 'R';
+            orientletter{2,ii} = 'L';
+        case 5
+            orientletter{1,ii} = 'A';
+            orientletter{2,ii} = 'P';
+        case 6
+            orientletter{1,ii} = 'S';
+            orientletter{2,ii} = 'I';
+    end
 end
 
 
