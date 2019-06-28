@@ -13,6 +13,11 @@ if isfield(matlabbatch{1},'cfg_BIDS') && isfield(matlabbatch{1}.cfg_BIDS,'cfg_pa
 
     for ii=hh
         matlabbatch{1}.cfg_BIDS.cfg_parsebids.bids_ses_type.bids_sesnum = ii;
+        for imod = 2:length(matlabbatch)
+            if isfield(matlabbatch{imod},'cfg_BIDS') && isfield(matlabbatch{imod}.cfg_BIDS,'cfg_parsebids')
+                matlabbatch{imod}.cfg_BIDS.cfg_parsebids.bids_ses_type.bids_sesnum = ii;
+            end
+        end
         try
             spm_jobman('run',matlabbatch);
         catch err
