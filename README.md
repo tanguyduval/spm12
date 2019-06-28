@@ -1,7 +1,7 @@
-
-EXTENDED EDITION
-Toulouse Neuromaging Center - Inserm - UMR 1214
-Tanguy Duval
+This repository includes the following spm apps:
+  * **BIDS**: for dicom to BIDS conversion and for parsing a BIDS folder. BIDS is the standard for neuroimaging data organization: http://bids.neuroimaging.io
+  * **Boutiques**: for running any dockerized neuroimaging tool (e.g. FSL, Freesurfer, ANTs, ...). Boutiques is the standard describing these tools https://boutiques.github.io/
+  * **Quality Control**: includes a module for exporting nifti results as an interactive Html page and an advanced Nifti viewer with ROI tools (for drawing a mask).
 
 ## Documentation
 
