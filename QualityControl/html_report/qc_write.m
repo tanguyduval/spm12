@@ -1,4 +1,14 @@
 function qc_write(qcdir,inputdate,subject,img,overlay,contrast,command, z)
+% EXAMPLE:
+%   qcdir = 'C:\Users\TONIC\STUDYID\TESTQC'; % output directory
+%   inputdate = '2019/08/28';
+%   subject = 'yann';
+%   img = {'C:\Users\TONIC\data\T1w.nii.gz'}
+%   overlay = []; % binary or int mask
+%   contrast = 'T1w'; % description of the data
+%   command = 'raw'; % describe the processing
+%   z = []; % automatically select slices
+%   qc_write(qcdir,inputdate,subject,img,overlay,contrast,command, z)
 if iscell(qcdir),   qcdir   = qcdir{1}; end
 if iscell(overlay), overlay = overlay{1}; end
 if isnumeric(command), command = num2str(command); end
@@ -12,7 +22,7 @@ end
 if ~exist(qcdir,'dir'), mkdir(qcdir); end
 jsonfname = fullfile(qcdir, 'qc_results.json');
 if exist(jsonfname,'file')
-    qcjson = loadjson(jsonfname);    
+    qcjson = bids.util.jsondecode(jsonfname);    
     while iscell(qcjson)
         qcjson = cat(1,qcjson{:});
     end
@@ -29,7 +39,7 @@ if ishandle(overlay)
     print(overlay,fullfile(qcdir,subject,'overlay_img.png'),'-dpng','-r0')
     qcjson(end).overlay_img    = strrep(fullfile(subject,'overlay_img.png'),'\','/');
 elseif exist(overlay,'file') && (strcmp(overlay(max(1,end-3):end),'.nii') || strcmp(overlay(max(1,end-6):end),'.nii.gz'))
-    [overlay_dat, h] = load_nii_datas(overlay,1);
+    [overlay_dat, h] = nii_load(overlay);
     overlay_dat = overlay_dat{end};
     overlay_dat = nanmean(overlay_dat,4);
     if ~exist('z','var')
@@ -70,15 +80,21 @@ end
 if ishandle(img)
     print(img,fullfile(qcdir,subject,'bkg_img.png'),'-dpng','-r0')
 elseif exist(img{1},'file')  && (strcmp(img{1}(max(1,end-3):end),'.nii') || strcmp(img{1}(max(1,end-6):end),'.nii.gz'))
-    [imgdat, h] = load_nii_datas(img,1);
+    [imgdat, h] = nii_load(img);
     for iim = 1:length(imgdat)
         tmpimg = imgdat{iim};
         tmpimg = nanmean(tmpimg,4);
-        if ~exist('z','var'), z = round(linspace(1,size(tmpimg,3),min(6,size(tmpimg,3)))); end
-        if iim == 1
-            img2D = makeimagestack(rot90(tmpimg(:,:,z)),-3,[],[round(Nslices/div) div],0);
+        if ~exist('z','var'), z = round(linspace(1,size(tmpimg,3),min(Nslices,size(tmpimg,3)))); end
+        tmpimgz = tmpimg(:,:,z);
+        if any(tmpimgz(:)) % all 0 volume
+            normtype = -3;
         else
-            img2D = cat(2+double(length(imgdat)==3),makeimagestack(rot90(tmpimg(:,:,z)),-3,[],[round(Nslices/div) div],0),img2D);
+            normtype = 0;
+        end
+        if iim == 1
+            img2D = makeimagestack(rot90(tmpimgz),normtype,[],[ceil(Nslices/div) div],0);
+        else
+            img2D = cat(2+double(length(imgdat)==3),makeimagestack(rot90(tmpimgz),normtype,[],[round(Nslices/div) div],0),img2D);
         end
     end
     % resize image to square pixels
@@ -96,7 +112,7 @@ qcjson(end).subject        = subject;
 
 % delete duplicated lines
 [~,ia] = unique({qcjson.background_img},'last');
-savejson([],qcjson(ia),jsonfname);
+bids.util.jsonencode(jsonfname,qcjson(ia));
 
 % Load json and add to html
 qc_reload(qcdir)
