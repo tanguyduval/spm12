@@ -60,10 +60,7 @@ elseif exist(overlay,'file') && (strcmp(overlay(max(1,end-3):end),'.nii') || str
     segpng = imresize(segpng,newdim,'nearest');
     
     % concat
-    %segpng = repmat(segpng,[1 length(img)]);
-    if length(img)==2
-        segpng = cat(2,uint8(segpng==4)*4 + uint8(segpng==1) ,segpng);
-    end
+    segpng = repmat(segpng,[1 length(img)]);
     segpng = imresize(segpng, 1000/size(segpng,2),'nearest');
     
     if ismask
@@ -94,7 +91,7 @@ elseif exist(img{1},'file')  && (strcmp(img{1}(max(1,end-3):end),'.nii') || strc
         if iim == 1
             img2D = makeimagestack(rot90(tmpimgz),normtype,[],[ceil(Nslices/div) div],0);
         else
-            img2D = cat(2+double(length(imgdat)==3),makeimagestack(rot90(tmpimgz),normtype,[],[round(Nslices/div) div],0),img2D);
+            img2D = cat(2,makeimagestack(rot90(tmpimgz),normtype,[],[round(Nslices/div) div],0),img2D);
         end
     end
     % resize image to square pixels
