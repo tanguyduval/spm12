@@ -15,7 +15,10 @@ if isfield(matlabbatch{1},'cfg_BIDS') && isfield(matlabbatch{1}.cfg_BIDS,'cfg_pa
         matlabbatch{1}.cfg_BIDS.cfg_parsebids.bids_ses_type.bids_sesnum = ii;
         for imod = 2:length(matlabbatch)
             if isfield(matlabbatch{imod},'cfg_BIDS') && isfield(matlabbatch{imod}.cfg_BIDS,'cfg_parsebids')
-                matlabbatch{imod}.cfg_BIDS.cfg_parsebids.bids_ses_type.bids_sesnum = ii;
+                if isfield(matlabbatch{imod}.cfg_BIDS.cfg_parsebids.bids_ses_type,'bids_sesnum')
+                    matlabbatch{imod}.cfg_BIDS.cfg_parsebids.bids_ses_type = rmfield(matlabbatch{imod}.cfg_BIDS.cfg_parsebids.bids_ses_type,'bids_sesnum');
+                end
+                matlabbatch{imod}.cfg_BIDS.cfg_parsebids.bids_ses_type.bids_sesrel = ['sub-' BIDS.subjects(ii).name '/ses-' BIDS.subjects(ii).session];
             end
         end
         try
