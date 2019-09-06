@@ -161,6 +161,7 @@ for imods = 1:length(mods)
     end
 end
 
+out = struct();
 for ii=1:2:length(list)
         MODALITY = SCAN.(list{ii})(strcmp({SCAN.(list{ii}).modality},list{ii+1}) | strcmp(regexprep({SCAN.(list{ii}).filename},'\.nii(\.gz)?',''),list{ii+1}));
         if ~isempty(MODALITY)
