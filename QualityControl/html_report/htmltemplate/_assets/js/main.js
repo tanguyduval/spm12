@@ -46,7 +46,7 @@ $(document).ready(function(){
         obj.prev().click();
       }
     }
-    evt.preventDefault();
+//    evt.preventDefault();
   });
 
   $("#table").bootstrapTable({
