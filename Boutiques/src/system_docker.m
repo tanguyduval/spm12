@@ -33,7 +33,7 @@ end
 mountdir = '';
 for k = 1:numel(in)
     mountdir = [mountdir '-v ' fileparts(in{k}) ':/i' num2str(k) ' '];
-    dockerinfname{k} = strrep(in{k},[fileparts(in{k}) filesep],['/i' num2str(k) '/']);
+    dockerinfname{k} = strrep(in{k},fullfile([fileparts(in{k}) filesep]),['/i' num2str(k) '/']);
 end
 
 % Replace token i%d by filenames
@@ -55,9 +55,9 @@ if isempty(dockerimage)
 else % docker
     cmdcell = strsplit(cmd);
     if strcmpi(cmdcell{1},'defaultEntrypoint')
-        cmddocker = ['docker run ' mountdir dockerimage ' ' strjoin(cmdcell(2:end))];
+        cmddocker = ['docker run --rm ' mountdir dockerimage ' ' strjoin(cmdcell(2:end))];
     else
-        cmddocker = ['docker run --entrypoint ' cmdcell{1} ' ' mountdir dockerimage ' ' strjoin(cmdcell(2:end))];
+        cmddocker = ['docker run --rm --entrypoint ' cmdcell{1} ' ' mountdir dockerimage ' ' strjoin(cmdcell(2:end))];
     end
     disp(['Running terminal command: ' cmddocker])
     [status, stdout]=system(cmddocker,'-echo');

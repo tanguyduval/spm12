@@ -166,9 +166,9 @@ if ischar(cmd)
                 else % docker
                     cmdcell = strsplit(cmd);
                     if strcmpi(cmdcell{1},'defaultEntrypoint')
-                        cmddocker = ['docker run ' mountdir job.usedocker.dockerimg ' ' strjoin(cmdcell(2:end))];
+                        cmddocker = ['docker run --rm ' mountdir job.usedocker.dockerimg ' ' strjoin(cmdcell(2:end))];
                     else
-                        cmddocker = ['docker run --entrypoint ' cmdcell{1} ' ' mountdir job.usedocker.dockerimg ' ' strjoin(cmdcell(2:end))];
+                        cmddocker = ['docker run --rm --entrypoint ' cmdcell{1} ' ' mountdir job.usedocker.dockerimg ' ' strjoin(cmdcell(2:end))];
                     end
                     disp(['Running terminal command: ' cmddocker])
                     [status, stdout]=system(cmddocker,'-echo');
