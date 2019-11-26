@@ -123,8 +123,8 @@ if ischar(cmd)
                     
                     % special case if more than one file choosen in a field
                     for kl = 2:length(in{k})
-                        mountdir = [mountdir '-v "' fileparts(in{k}{kl}) ':/i' num2str(k) '" '];
-                        dockerinfname{k} = [dockerinfname{k} ' ' strrep(in{k}{kl},[fileparts(in{k}{kl}) filesep],['/i' num2str(k) '/'])];
+                        mountdir = [mountdir '-v "' fileparts(in{k}{kl}) ':/i' num2str(k) '_' num2str(kl) '" '];
+                        dockerinfname{k} = [dockerinfname{k} ' ' strrep(in{k}{kl},[fileparts(in{k}{kl}) filesep],['/i' num2str(k) '_' num2str(kl) '/'])];
                     end
                     
                 end
