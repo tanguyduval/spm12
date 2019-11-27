@@ -14,6 +14,7 @@ if ~isdeployed
     % If the configuration file is stored in another place, the path must be adjusted here.
     p = fileparts(mfilename('fullpath'));
     addpath(genpath(p));
+    addpath(genpath(fullfile(fileparts(p),'External')));
 end
 % run configuration main & def function, return output
 cfg = cfg_cfg_BIDS;
