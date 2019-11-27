@@ -23,7 +23,7 @@ end
 
 % CALL BIDS_PARSER
 if ~exist('BIDS','var')
-    BIDS = bids_parser(job.parent{1});
+    BIDS = bids.layout(job.parent{1});
     if ~any(alreadyparsed)
         alreadyparsed = length(BIDSfolder)+1;
     else
@@ -48,7 +48,7 @@ if isfield(job.bids_ses_type,'bids_sesnum')
     if isa(job.bids_ses_type.bids_sesnum,'cfg_dep'), job.bids_ses_type.bids_sesnum=1; end
     job.bids_ses = job.bids_ses_type.bids_sesnum;
 elseif isfield(job.bids_ses_type,'bids_sesrel')
-    if isa(job.bids_ses_type.bids_sesrel,'cfg_dep'), job.bids_ses_type.bids_sesrel=['sub-' BIDS.subjects(1).name '/ses-' BIDS.subjects(1).session]; end
+    if isa(job.bids_ses_type.bids_sesrel,'cfg_dep'), job.bids_ses_type.bids_sesrel=[BIDS.subjects(1).name '/' BIDS.subjects(1).session]; end
     bids_sesrel = strsplit(job.bids_ses_type.bids_sesrel,{'/' '\'});
     if length(bids_sesrel)==1
         job.bids_ses = strcmp({BIDS.subjects.name},strrep(bids_sesrel{1},'sub-',''));
@@ -72,12 +72,12 @@ disp(['Subject = ' SCAN.name])
 disp(['Session = ' SCAN.session])
 
 % Get Path
-out.bidsdir         = {BIDS.path};
+out.bidsdir         = {BIDS.dir};
 out.sub             = SCAN.name;
 out.ses             = SCAN.session;
 if strcmp(job.derivativesname,'<UNDEFINED>'), job.derivativesname = ''; end
-out.bidsderivatives = fullfile(out.bidsdir,'derivatives',job.derivativesname,['sub-' SCAN.name],['ses-' SCAN.session]);
-out.bidssession = fullfile(out.bidsdir,['sub-' SCAN.name],['ses-' SCAN.session]);
+out.bidsderivatives = fullfile(out.bidsdir,'derivatives',job.derivativesname,SCAN.name,SCAN.session);
+out.bidssession = fullfile(out.bidsdir,SCAN.name,SCAN.session);
 if isfield(SCAN,'tsv') && ~isempty(SCAN.tsv)
     ftsv            = fieldnames(SCAN.tsv);
     for fff = 1:length(ftsv)
@@ -85,9 +85,9 @@ if isfield(SCAN,'tsv') && ~isempty(SCAN.tsv)
     end
 end
 if strcmp(SCAN.session,'none')
-    out.relpath         = fullfile(['sub-' SCAN.name]);
+    out.relpath         = fullfile(SCAN.name);
 else
-    out.relpath         = fullfile(['sub-' SCAN.name],['ses-' SCAN.session]);
+    out.relpath         = fullfile(SCAN.name,SCAN.session);
 end
 
 if ~isempty(job.derivativesname) && ~exist(out.bidsderivatives{1},'dir')
@@ -151,13 +151,10 @@ list = {};
 for imods = 1:length(mods)
     for ifile = 1:length(SCAN.(mods{imods}))
         list{end+1} = mods{imods};
-        if isfield(SCAN.(mods{imods}),'modality') && ~isempty(SCAN.(mods{imods})(ifile).modality)
-            list{end+1} = SCAN.(mods{imods})(ifile).modality;
-        else
-            SCAN.(mods{imods})(ifile).modality = 'unknown';
-            list{end+1} = regexprep(SCAN.(mods{imods})(ifile).filename,'\.nii(\.gz)?','');
-            SCAN.(mods{imods})(ifile).modality = [];
-        end
+        SCAN.(mods{imods})(ifile).modality = 'unknown';
+        Modality = regexp(SCAN.(mods{imods})(ifile).filename,'^sub-[a-zA-Z0-9]+(_ses-[a-zA-Z0-9]+)?_(?<spec>.+)\.nii','names');
+        list{end+1} = Modality.spec;
+        SCAN.(mods{imods})(ifile).modality = Modality.spec;
     end
 end
 
@@ -167,7 +164,7 @@ for ii=1:2:length(list)
         if ~isempty(MODALITY)
             % Add nifti
             nii_fname = fullfile(SCAN.path,strrep(list{ii},'image',''),MODALITY(1).filename);
-            tag = genvarname([list{ii} '_' list{ii+1}]);
+            tag = genvarname([list{ii} '_' strrep(list{ii+1},'-','')]);
             out.(tag) = {nii_fname};
             
             % Special treatment for dmri

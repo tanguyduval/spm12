@@ -25,7 +25,7 @@ if isfield(matlabbatch{1},'cfg_BIDS') && isfield(matlabbatch{1}.cfg_BIDS,'cfg_pa
             spm_jobman('run',matlabbatch);
         catch err
             disp(err.message)
-            errorsubs{end+1,1} = ['sub-' BIDS.subjects(ii).name ' ses-' BIDS.subjects(ii).session ': ' err.message(1,1:end)];
+            errorsubs{end+1,1} = [BIDS.subjects(ii).name ' ' BIDS.subjects(ii).session ': ' err.message(1,1:end)];
         end
     end
     
