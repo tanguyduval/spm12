@@ -4,11 +4,13 @@ if ~exist('dat','var'), dat=[]; end
 if ~exist('parent','var'), parent=[]; end
 if ~exist('range','var'), range=[]; end
 tool = imtool3D(dat,[],parent,range,[],mask);
+resizefactorthree = false;
+if isempty(parent), parent = tool(1).getHandles.fig; resizefactorthree = true; end
 range = tool.getClimits;
 CB_Motion1 = get(gcf,'WindowButtonMotionFcn');
-tool(2) = imtool3D(dat,[],tool(1).getHandles.fig,range,[],mask);
+tool(2) = imtool3D(dat,[],parent,range,[],mask);
 CB_Motion2 = get(gcf,'WindowButtonMotionFcn');
-tool(3) = imtool3D(dat,[],tool(1).getHandles.fig,range,[],mask);
+tool(3) = imtool3D(dat,[],parent,range,[],mask);
 CB_Motion3 = get(gcf,'WindowButtonMotionFcn');
 
 setviewplane(tool(2),'sagittal');
@@ -24,18 +26,20 @@ tool(3).setPosition([0.66 0 0.33 1])
 % tool(2).setPosition([0.5 0.5 0.5 0.5])
 % tool(3).setPosition([0 0 0.5 0.5])
 
-% Make figure 3 times larger
-h = tool(1).getHandles.fig;
-set(h,'Units','Pixels');
-pos = get(tool(1).getHandles.fig,'Position');
-pos(3)=3*pos(3);
-screensize = get(0,'ScreenSize');
-pos(3) = min(pos(3),screensize(3)-100);
-pos(4) = min(pos(4),screensize(4)-100);
-pos(1) = ceil((screensize(3)-pos(3))/2);
-pos(2) = ceil((screensize(4)-pos(4))/2);
-set(h,'Position',pos)
-set(h,'Units','normalized');
+if resizefactorthree
+    % Make figure 3 times larger
+    h = tool(1).getHandles.fig;
+    set(h,'Units','Pixels');
+    pos = get(tool(1).getHandles.fig,'Position');
+    pos(3)=3*pos(3);
+    screensize = get(0,'ScreenSize');
+    pos(3) = min(pos(3),screensize(3)-100);
+    pos(4) = min(pos(4),screensize(4)-100);
+    pos(1) = ceil((screensize(3)-pos(3))/2);
+    pos(2) = ceil((screensize(4)-pos(4))/2);
+    set(h,'Position',pos)
+    set(h,'Units','normalized');
+end
 
 
 for ii=2:3
@@ -103,16 +107,32 @@ S = tool(2).getImageSize;
 y2 = tool(3).getCurrentSlice;
 x2 = tool(1).getCurrentSlice;
 crossX2 = plot(H.Axes,[x2 x2],[0 S(1)],'r-');
-crossY2 = plot(H.Axes,[0 S(2)],[y2 y2],'r-');
+crossY2 = plot(H.Axes,[0 S(3)],[y2 y2],'r-');
 
 H = tool(3).getHandles;
 S = tool(3).getImageSize;
 y3 = tool(2).getCurrentSlice;
 x3 = tool(1).getCurrentSlice;
 crossX3 = plot(H.Axes,[x3 x3],[0 S(1)],'r-');
-crossY3 = plot(H.Axes,[0 S(2)],[y3 y3],'r-');
+crossY3 = plot(H.Axes,[0 S(3)],[y3 y3],'r-');
 
 hidecross(crossX1,crossY1,crossX2,crossY2,crossX3,crossY3)
+
+% add left button options
+hp = tool(2).getHandles.Panels.Tools;
+set(get(hp,'Children'),'Visible','off')
+set(hp,'Visible','on')
+bgc = get(hp,'BackgroundColor');
+for ii=1:3
+    ContrastWBDF{ii} = get(tool(ii).getHandles.I,'ButtonDownFcn');
+end
+txt = uicontrol(hp,'Style','text','String','Mouse Left Click:','Units','Pixels','Position',[5 0 100 20]);
+lbo = uibuttongroup(hp,'Units','Pixels','Position',[105 5 250 20],...
+                    'SelectionChangedFcn',@(source,event) lboselection(source,event,tool,ContrastWBDF,crossX1,crossY1,crossX2,crossY2,crossX3,crossY3));
+lbo1 = uicontrol(lbo,'Style','radiobutton','String','Adjust Contrast','Position',[5 0 100 20]);
+lbo2 = uicontrol(lbo,'Style','radiobutton','String','Cursor (hold [X] key)','Position',[105 0 150 20]);
+set([txt lbo lbo1 lbo2],'BackgroundColor',bgc,'ForegroundColor',[1 1 1],'FontSize',8);
+
 % add tooltip
 for ii=1:3
     set(tool(ii).getHandles.Slider,'TooltipString',sprintf('Change Slice (use the scroll wheel)\nAlso, use and hold the [X] key to navigate in the volume based on mouse location)'));
@@ -235,6 +255,35 @@ switch event.Key
         end
 end
 
+% change left button mode
+function lboselection(source,event,tool,ContrastWBDF,crossX1,crossY1,crossX2,crossY2,crossX3,crossY3)
+for ii = 1:3
+    switch get(event.NewValue,'String')
+        case 'Adjust Contrast'
+            set(tool(ii).getHandles.I,'ButtonDownFcn',ContrastWBDF{ii})
+            set(tool(ii).getHandles.mask,'ButtonDownFcn',ContrastWBDF{ii})
+            hidecross(crossX1,crossY1,crossX2,crossY2,crossX3,crossY3)
+        case 'Cursor (hold [X] key)'
+            set(tool(ii).getHandles.I,'ButtonDownFcn',@(src,evnt) BTF_syncSlices(src,evnt,ContrastWBDF{ii},tool,crossX1,crossY1,crossX2,crossY2,crossX3,crossY3))
+            set(tool(ii).getHandles.mask,'ButtonDownFcn',@(src,evnt) BTF_syncSlices(src,evnt,ContrastWBDF{ii},tool,crossX1,crossY1,crossX2,crossY2,crossX3,crossY3))
+    end
+end
+
+function BTF_syncSlices(src,evnt,ContrastWBDF,tool,crossX1,crossY1,crossX2,crossY2,crossX3,crossY3)
+fig = tool(1).getHandles.fig;
+WBMF_old = get(fig,'WindowButtonMotionFcn');
+WBUF_old = get(fig,'WindowButtonUpFcn');
+
+switch get(fig,'SelectionType')
+    case 'normal'
+        syncSlices(tool,crossX1,crossY1,crossX2,crossY2,crossX3,crossY3)
+        fun=@(src,evnt) syncSlices(tool,crossX1,crossY1,crossX2,crossY2,crossX3,crossY3);
+        fun2=@(src,evnt) set(src,'WindowButtonMotionFcn',WBMF_old,'WindowButtonUpFcn',WBUF_old);
+        set(fig,'WindowButtonMotionFcn',fun,'WindowButtonUpFcn',fun2)
+    otherwise
+        ContrastWBDF(src,evnt);
+end
+
 function Callback3(CB1,CB2,CB3,varargin)
 CB3(varargin{:})
 CB1(varargin{:})
@@ -277,12 +326,19 @@ timer=tic;
 
 
 function showcross(tool,crossX1,crossY1,crossX2,crossY2,crossX3,crossY3)
+S = tool(1).getImageSize;
 set(crossX1,'XData',[tool(3).getCurrentSlice tool(3).getCurrentSlice])
+set(crossX1,'YData',[0 S(1)])
 set(crossY1,'YData',[tool(2).getCurrentSlice tool(2).getCurrentSlice])
+set(crossY1,'XData',[0 S(2)])
 set(crossX2,'XData',[tool(1).getCurrentSlice tool(1).getCurrentSlice])
+set(crossX2,'YData',[0 S(2)])
 set(crossY2,'YData',[tool(3).getCurrentSlice tool(3).getCurrentSlice])
+set(crossY2,'XData',[0 S(3)])
 set(crossX3,'XData',[tool(1).getCurrentSlice tool(1).getCurrentSlice])
+set(crossX3,'YData',[0 S(1)])
 set(crossY3,'YData',[tool(2).getCurrentSlice tool(2).getCurrentSlice])
+set(crossY3,'XData',[0 S(3)])
 
 set(crossX1,'Visible','on')
 set(crossY1,'Visible','on')

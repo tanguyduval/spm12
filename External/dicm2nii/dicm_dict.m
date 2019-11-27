@@ -191,7 +191,7 @@ C = {
     '0018' '2005' 'DS' 'SliceLocationVector'
     '0018' '5100' 'CS' 'PatientPosition'
     '0018' '9004' 'CS' 'ContentQualification'
-    '0018' '9005' 'SH' 'PulseSequenceName'
+    '0018' '9005' 'SH' 'SequenceName' % PulseSequenceName
     '0018' '9006' 'SQ' 'MRImagingModifierSequence'
     '0018' '9008' 'CS' 'EchoPulseSequence'
     '0018' '9009' 'CS' 'InversionRecovery'
@@ -1267,7 +1267,7 @@ elseif strncmpi(vendor, 'UIH', 3)
     '0065' '1032' 'SH' 'MRKSpaceFilter'
     '0065' '1033' 'SH' 'MRTableMode'
     '0065' '1036' 'OB' 'MRDiscoParameter'
-    '0065' '1037' 'FD' 'DiffusionGradientDirection' % 'MRDiffusionGradOrientation'
+    '0065' '1037' 'FD' 'MRDiffusionGradOrientation'
     '0065' '1038' 'FD' 'MRPerfusionNoiseLevel'
     '0065' '1039' 'SH' 'MRGradRange'
     '0065' '1050' 'DS' 'LocationsInAcquisition' % MRNumberOfSliceInVolume
@@ -1283,7 +1283,7 @@ dict.vr = C(:,3); % for implicit VR and some problematic explicit VR
 dict.name = C(:,4);
 
 if nargin>1 && ~isempty(flds) % use only provided fields
-    flds = cellstr(flds);
+    if ischar(flds), flds = cellstr(flds); end
     ind = false(size(dict.tag,1), 1);
     for i = 1:numel(flds)
         ind = ind | strcmp(flds{i}, dict.name); % include duplicate

@@ -11,14 +11,21 @@ function write_tsv(id,tsvfile,varargin)
 
 if iscell(tsvfile), tsvfile = tsvfile{1}; end
 if exist(tsvfile,'file') % read already existing tsvfile
-    T = readtable(tsvfile,'FileType','text','Delimiter','\t','Format',repmat('%s',[1,length(varargin)/2+1]));
+    % Number of columns
+    fid = fopen(tsvfile);
+    tline = fgetl(fid);
+    fclose(fid);
+    Nvar = sum(~cellfun(@isempty,strsplit(tline,'\t')));
+    % read tsv file
+    T = readtable(tsvfile,'FileType','text','Delimiter','\t','Format',repmat('%s',[1,Nvar]));
 end
 varargin(1:2:end) = cellfun(@genvarname,varargin(1:2:end),'uni',0);
+varargin(cellfun(@isempty,varargin)) = {'N/A'};
 if exist(tsvfile,'file') && ~isempty(T) % append to already existing tsvfile
     ind = find(strcmp(table2cell(T(:,1)),id),1);
     if isempty(ind)
         ind = size(T,1)+1;
-        T.(T.Properties.VariableNames{1}){end+1,1} = char(string(id));
+        T.(T.Properties.VariableNames{1}){end+1,1} = char(id);
     end
     
     for ii=1:2:length(varargin)
@@ -40,7 +47,7 @@ if exist(tsvfile,'file') && ~isempty(T) % append to already existing tsvfile
 
 else % write new tsvfile
     T=table;
-    T(end+1,:) = {char(string(id)), varargin{2:2:end}};
+    T(end+1,:) = {char(id), varargin{2:2:end}};
     if isempty(inputname(1))
         idName = 'id';
     else

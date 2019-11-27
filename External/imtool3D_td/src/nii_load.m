@@ -1,4 +1,4 @@
-function [dat,hdr,list] = nii_load(filename,untouch,intrp)
+function [dat,hdr,list] = nii_load(filename,untouch,intrp,applyslope)
 % [dat,hdr,list] = nii_load(filename,untouch) loads nifti files in
 % LPI orientation
 %
@@ -29,6 +29,7 @@ if ~isdeployed
 end
 
 if ~exist('intrp','var'), intrp = 'linear'; end
+if ~exist('applyslope','var'), applyslope = []; end % ask the user
 if isstruct(filename)% nii structure loaded with nii_tool?
     filename = {filename};
 end
@@ -65,7 +66,30 @@ for ff=1:length(list)
     if ff==1
         hdr = nii.hdr;
     end
-    nii = nii.img;
+    if ~ismember(nii.hdr.scl_slope, [0,1]) || nii.hdr.scl_inter ~= 0
+        warning(sprintf(['\nScaling factor detected in the Nifty header (field ''scl_slope'')\n\nScaling slope y = %.2g x + %.2g\n\n(Data will be converted from %s to double > memory intensive)\n'],nii.hdr.scl_slope,nii.hdr.scl_inter,class(nii.img)))
+        if isempty(applyslope) 
+            if numel(nii.img)*8/1e6 < 300 % 300 Mb limit to auto apply slope
+                applyslope = true;
+            else
+                if isstruct(list{ff})
+                    Name = list{ff}.hdr.file_name;
+                else
+                    Name = list{ff};
+                end
+                applyslope = questdlg(sprintf('Scaling factor detected in the Nifty header (field ''scl_slope'')\n\nApply scaling slope y = %.2g x + %.2g?\n\n(Data will be converted from %s to double > %g Mb free memory is required)',nii.hdr.scl_slope,nii.hdr.scl_inter,class(nii.img),numel(nii.img)*8/1e6), Name,'Yes','No','Yes');
+            end
+        end
+    else
+        applyslope = 0;
+    end
+    switch applyslope
+        case {'Yes',1}
+            nii = nii.hdr.scl_slope*double(nii.img)+nii.hdr.scl_inter;
+        case {'No',0}
+            nii = nii.img;
+    end
+    
     dat(end+1:end+size(nii(:,:,:,:,:),5)) = mat2cell(nii(:,:,:,:,:),size(nii,1),size(nii,2),size(nii,3),size(nii,4),ones(1,size(nii(:,:,:,:,:),5)));
 end
 

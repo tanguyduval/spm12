@@ -1,13 +1,29 @@
 function tool = imtool3D_nii(filename,viewplane,maskfname, parent, range)
-% imtool3D_nii fmri.nii.gz
-% imtool3D_nii fmri.nii.gz sagittal
-% imtool3D_nii *fmri*.nii.gz
-% imtool3D_nii({'fmri.nii.gz', 'T1.nii.gz'})
-if nargin==0 || isempty(filename)
-    [filename, path] = uigetfile({'*.nii;*.nii.gz','NIFTI Files (*.nii,*.nii.gz)'},'Select an image','MultiSelect', 'on');
-    if isequal(filename,0), return; end
-    filename = fullfile(path,filename);
-end
+% NIFTI Viewer
+%
+% INPUT
+%   filename            String or cell of string with nifti filenames
+%   viewplane           1x1, 1x2 or 1x3 Matrix of integer. 
+%                        Example: 
+%                        3: slices are in the third dimension (axial view)
+%                        [3 2 1]: Axial, saggital and coronal views
+%   maskfname           String. filename of the mask in NIFTI
+%   parent              Handle to a figure or panel
+%   range               1x2 or cell of 1x2 float numbers (min and max intensity)
+%
+% OUTPUT
+%   tool                imtool3D object. 
+%
+% EXAMPLE
+%   imtool3D_nii fmri.nii.gz
+%   imtool3D_nii fmri.nii.gz sagittal
+%   imtool3D_nii *fmri*.nii.gz
+%   imtool3D_nii({'fmri.nii.gz', 'T1.nii.gz'})
+%
+% Tanguy DUVAL, INSERM, 2019
+% SEE ALSO imtool3D, imtool3D_nii_3planes
+
+if nargin==0, filename = []; end
 
 if ~exist('parent','var'), parent=[]; end
 if ~exist('viewplane','var'), viewplane=[]; end
@@ -15,8 +31,25 @@ if isempty(viewplane), untouch = true; viewplane=3; else, untouch = false; end
 if ~exist('range','var'), range=[]; end
 
 if ~exist('maskfname','var'), maskfname=[]; end
-[dat, hdr, list] = nii_load(filename,untouch);
-disp(list)
+if ~isempty(filename)
+    if isstruct(filename)
+        dat = filename.img;
+        hdr = filename.hdr;
+        list = filename.fname;
+    else
+        [dat, hdr, list] = nii_load(filename,untouch);
+    end
+    disp(list)
+else
+    load mri % example mri image provided by MATLAB
+    dat = D;
+    dat = squeeze(dat);
+    dat = permute(dat(end:-1:1,:,:),[2 1 3]); % LPI orientation
+    list = {'Template'};
+    hdr.pixdim = [4 1 1 2.5];
+    untouch = false;
+end
+
 if iscell(maskfname), maskfname = maskfname{1}; end
 if ~isempty(maskfname)
     mask = nii_load({hdr,maskfname},untouch); mask = mask{1};
@@ -99,6 +132,14 @@ if length(tool)>1
     annotation(tool(3).getHandles.Panels.Image,'textbox','EdgeColor','none','String','I','Position',[0.5 0 0.05 0.05],'Color',[1 1 1]);
 end
 
+% Add Drag and Drop feature
+%             txt_drop = annotation(tool.handles.Panels.Image,'textbox','Visible','off','EdgeColor','none','FontSize',25,'String','DROP!','Position',[0.5 0.5 0.6 0.1],'FitBoxToText','on','Color',[1 0 0]);
+jFrame = get(tool(1).getHandles.fig, 'JavaFrame');
+jAxis = jFrame.getAxisComponent();
+dndcontrol.initJava();
+dndobj = dndcontrol(jAxis);
+dndobj.DropFileFcn = @(s, e)onDrop(tool, s, e); %,'DragEnterFcn',@(s,e) setVis(txt_drop,1),'DragExitFcn',@(s,e) setVis(txt_drop,0));
+
 function loadImage(hObject,tool,hdr)
 % unselect button to prevent activation with spacebar
 set(hObject, 'Enable', 'off');
@@ -179,3 +220,58 @@ end
 function openvar2(hdr)
 assignin('base', 'hdr',hdr);
 evalin('base', ['openvar hdr']);
+
+
+function onDrop(tool, listener, evtArg)
+ht = wait_msgbox;
+
+% Get back the dropped data
+data = evtArg.Data;
+
+% Is it transferable as a list of files
+if length(data)==1 && isdir(data{1})
+    imtool3D_BIDS(data{1})
+else
+    [~,~,ext] = fileparts(data{1});
+    switch ext
+        case {'.nii','.gz'}
+            [dat, hdr] = nii_load(data);
+        case {'.tif', '.png'}
+            for id = 1:length(data)
+                dat{id} = imread(data{id});
+            end
+            hdr.pixdim = [1 1 1 1];
+        case '.mat'
+            for id = 1:length(data)
+                tmp = load(data{id});
+                ff = fieldnames(tmp);
+                dat{id} = tmp.(ff{1});
+            end
+            hdr.pixdim = [1 1 1 1];
+        otherwise
+            error('unknown format %s',ext)
+    end
+    for ii=1:length(tool)
+        tool(ii).setImage(dat)
+        tool(ii).setAspectRatio(hdr.pixdim(2:4));
+        tool(ii).setlabel(data)
+    end
+end
+
+if ishandle(ht), delete(ht); end
+
+function h = setVis(h,value)
+h.Visible = value;
+
+function h = wait_msgbox
+txt = 'Loading files. Please wait...';
+h=figure('units','norm','position',[.5 .75 .2 .2],'menubar','none','numbertitle','off','resize','off','units','pixels');
+ha=uicontrol('style','text','units','norm','position',[0 0 1 1],'horizontalalignment','center','string',txt,'units','pixels','parent',h);
+hext=get(ha,'extent');
+hext2=hext(end-1:end)+[60 60];
+hpos=get(h,'position');
+set(h,'position',[hpos(1)-hext2(1)/2,hpos(2)-hext2(2)/2,hext2(1),hext2(2)]);
+set(ha,'position',[30 30 hext(end-1:end)]);
+disp(char(txt));
+drawnow;
+

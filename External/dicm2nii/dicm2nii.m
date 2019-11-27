@@ -411,8 +411,8 @@ if ischar(fmt) && strcmpi(fmt,'BIDSNII')
     bids = true;
     fmt = '.nii';
 end
-if bids && verLessThan('matlab','9.4')
-    fprintf('BIDS conversion is easier with MATLAB R2018a or more.\n')
+if bids && verLessThanOctave
+    fprintf('BIDS conversion is easier with MATLAB R2018a or later.\n')
 end
 
 if (isnumeric(fmt) && any(fmt==[0 1 4 5])) || ...
@@ -437,7 +437,7 @@ if nargin<1 || isempty(src) || (nargin<2 || isempty(niiFolder))
 end
 
 %% Deal with niiFolder
-if ~isdir(niiFolder), mkdir(niiFolder); end
+if ~isdir(niiFolder), mkdir(niiFolder); end %#ok<*ISDIR>
 niiFolder = [GetFullPath(niiFolder) filesep];
 converter = ['dicm2nii.m ' getVersion];
 if errorLog('', niiFolder) && ~no_save % remember niiFolder for later call
@@ -449,7 +449,7 @@ end
 tic;
 if isnumeric(src)
     error('Invalid dicom source.');    
-elseif iscellstr(src) % multiple files/folders
+elseif iscellstr(src) %#ok<*ISCLSTR> % multiple files/folders
     fnames = {};
     for i = 1:numel(src)
         if isdir(src{i})
@@ -546,24 +546,21 @@ for k = 1:nFile
         if ~isempty(errStr{k}) % && isempty(strfind(errInfo, errStr{k}))
             errInfo = sprintf('%s\n%s\n', errInfo, errStr{k});
         end
-        continue; % skip the file
+        continue; % ingore the file
     end
 
     if isfield(s, flds{4}) && (pf.use_seriesUID || ~isfield(s, 'SeriesNumber'))
         sUID = s.SeriesInstanceUID;
-    else
+    else % make up UID
         if isfield(s, 'SeriesNumber'), sN = s.SeriesNumber; 
-        else, sN = fix(toc*1e6);
+        else, sN = fix(toc*1e6); % unique sN for each dicm file
         end
-        sUID = num2str(sN); % make up UID
-        if isfield(s, 'SeriesDescription')
-            sUID = [s.SeriesDescription sUID];
-        end
+        sUID = sprintf('%s%g', tryGetField(s, 'SeriesDescription', ''), sN);
     end
     
     m = find(strcmp(sUID, seriesUIDs));
     if isempty(m)
-        m = numel(seriesUIDs)+1;
+        m = numel(seriesUIDs) + 1;
         seriesUIDs{m} = sUID;
         ETs{m} = [];
     end
@@ -641,7 +638,9 @@ for i = 1:nRun
         end
         if ~isfield(s, 'EchoTimes') && isfield(s, 'EchoTime')
             h{i}{1}.EchoTimes = nan(1, nFile);
-            for k = 1:nFile, h{i}{1}.EchoTimes(k) = h{i}{k}.EchoTime; end
+            for k = 1:nFile
+                h{i}{1}.EchoTimes(k) = tryGetField(h{i}{k}, 'EchoTime', 0); 
+            end
         end
     end
     
@@ -740,31 +739,14 @@ for i = 1:nRun
 end
 h = h(keep); sNs = sNs(keep); studyIDs = studyIDs(keep); 
 subjs = subjs(keep); vendor = vendor(keep);
-acqs  = acqs(keep);
+subj = unique(subjs);
+acq = unique(acqs(keep));
 
-%% sort h by PatientName, then StudyID, then SeriesNumber
+% sort h by PatientName, then StudyID, then SeriesNumber
 % Also get correct order for subjs/studyIDs/nStudy/sNs for nii file names
-[subjs, ind] = sort(subjs);
-subj = unique(subjs); 
-acq = unique(acqs);
-h = h(ind); sNs = sNs(ind); studyIDs = studyIDs(ind); % by subjs now
-nStudy = ones(1, nRun); % one for each series
-for i = 1:numel(subj)
-    iSub = find(strcmp(subj{i}, subjs));
-    study = studyIDs(iSub);
-    [study, iStudy] = sort(study); % by study for each subject
-    a = h(iSub);   h(iSub)   = a(iStudy);
-    a = sNs(iSub); sNs(iSub) = a(iStudy);
-    studyIDs(iSub) = study; % done for h/sNs/studyIDs by studyIDs for a subj
-    uID = unique(study);
-    nStudy(iSub) = numel(uID);
-    for k = 1:numel(uID) % now sort h/sNs by sNs for each studyID
-        iStudy = strcmp(uID{k}, study);
-        ind = iSub(iStudy); 
-        [sNs(ind), iSN] = sort(sNs(ind));
-        a = h(ind); h(ind) = a(iSN);
-    end
-end
+[~, ind] = sortrows([subjs' studyIDs' num2cell(sNs')]);
+h = h(ind); subjs = subjs(ind); studyIDs = studyIDs(ind); sNs = sNs(ind);
+multiStudy = cellfun(@(c)numel(unique(studyIDs(strcmp(subjs,c))))>1, subjs);
 
 %% Generate unique result file names
 % Unique names are in format of SeriesDescription_s007. Special cases are: 
@@ -780,24 +762,24 @@ end
 rNames = cell(1, nRun);
 multiSubj = numel(subj)>1;
 j_s = nan(nRun, 1); % index-1 for _s003. needed if 4+ length SeriesNumbers
-maxLen = namelengthmax - 3;
+
 for i = 1:nRun
     s = h{i}{1};
     sN = sNs(i);
-    a = strtrim(ProtocolName(s));
+    a = ProtocolName(s);
     if isPhase(s), a = [a '_phase']; end % phase image
     if i>1 && sN-sNs(i-1)==1 && isType(s, '\MOCO\'), a = [a '_MoCo']; end
     if multiSubj, a = [a '_' subjs{i}]; end
-    if nStudy(i)>1, a = [a '_Study' studyIDs{i}]; end
+    if multiStudy(i), a = [a '_Study' studyIDs{i}]; end
     if ~isstrprop(a(1), 'alpha'), a = ['x' a]; end % genvarname behavior
-    a(~isstrprop(a, 'alphanum')) = '_'; % make str valid for field name
-    a = regexprep(a, '_{2,}', '_'); % remove repeated underscore
+    % a = regexprep(a, '(?<=\S)\s+([a-z])', '${upper($1)}'); % camel case
+    a = regexprep(regexprep(a, '[^a-zA-Z0-9_]', '_'), '_{2,}', '_');
     if sN>100 && strncmp(s.Manufacturer, 'Philips', 7)
         sN = tryGetField(s, 'AcquisitionNumber', floor(sN/100));
     end
     j_s(i) = numel(a);
-    rNames{i} = sprintf('%s_s%03.0f', a, sN);
-    d = numel(rNames{i}) - maxLen;
+    rNames{i} = sprintf('%s_s%03i', a, sN);
+    d = numel(rNames{i}) - 255; % file max len = 255
     if d>0, rNames{i}(j_s(i)+(-d+1:0)) = ''; j_s(i) = j_s(i)-d; end % keep _s007
 end
 
@@ -839,14 +821,27 @@ end
 
 %% Parse BIDS
 if bids
+    % Manage Multiple SUBJECT or SESSION
     if multiSubj
-        fprintf('Multiple subjects detected!!!!! Skipping...\nPlease convert subjects one by one with BIDS options\n')
+        fprintf(['Multiple subjects detected!!!!! Skipping...\n' ...
+            'Please convert subjects one by one with BIDS options\n'])
         fprintf('%s\n',subj{:})
+        for isub = 1:length(subj)
+            fprintf('Converting subject one by one...  %s\n',subj{isub})
+            isublist = strcmp(subjs,subj{isub});
+            FileNames = cellfun(@(y) cellfun(@(x) x.Filename,y,'uni',0),h(isublist),'uni',0);
+            dicm2nii([FileNames{:}],niiFolder,'bids')
+        end
         return;
     end
     if numel(acq)>1
-        fprintf('Multiple acquitisition detected!!!!! Skipping...\nPlease convert sessions one by one with BIDS options\n')
-        fprintf('%s\n',acq{:})
+        fprintf('Multiple acquitisition detected!!!!! \n')
+        for iacq = 1:length(acq)
+            fprintf('Converting sessions one by one...  %s\n',acq{iacq})
+            iacqlist = strcmp(acqs(keep),acq{iacq});
+            FileNames = cellfun(@(y) cellfun(@(x) x.Filename,y,'uni',0),h(iacqlist),'uni',0);
+            dicm2nii([FileNames{:}],niiFolder,'bids')
+        end
         return;
     end
 
@@ -861,8 +856,13 @@ if bids
         Subject = {'01'};
     end
     Session                = {'01'};
-    AcquisitionDate        = datetime(acq{1},'InputFormat','yyyyMMdd');
-    AcquisitionDate.Format = 'yyyy-MM-dd';
+    try 
+        AcquisitionDate        = datetime(acq{1},'InputFormat','yyyyMMdd');
+        AcquisitionDate.Format = 'yyyy-MM-dd';
+    catch % octave
+        AcquisitionDate        = acq{1};
+        AcquisitionDate        = [AcquisitionDate(1:4) '-' AcquisitionDate(5:6) '-' AcquisitionDate(7:8)];
+    end
     Comment                = {'N/A'};
     S = table(Subject,Session,AcquisitionDate,Comment);
     
@@ -879,7 +879,7 @@ if bids
         'anat','PD';
         'anat','PDmap';
         'dwi' ,'dwi';
-        'func','bold';
+        'func','task-motor_bold';
         'func','task-rest_bold';
         'fmap','phasediff';
         'fmap','phase1';
@@ -908,7 +908,7 @@ if bids
     figargs = {'bids' * 256.^(0:3)','Position',[min(scrSz(4)+420,620) scrSz(4)-600 420 300],...
                'Color', clr,...
                'CloseRequestFcn',@my_closereq};
-    if verLessThan('matlab','9.4')
+    if verLessThanOctave
         hf = figure(figargs{1});
         set(hf,figargs{2:end});
         % add help
@@ -917,14 +917,13 @@ if bids
     else
         hf = uifigure(figargs{:});
     end
-    uimenu(hf,'Text','help','Callback',@(src,evnt) showHelp(valueset))
+    uimenu(hf,'Label','help','Callback',@(src,evnt) showHelp(valueset))
     set(hf,'Name', 'dicm2nii - BIDS Converter', 'NumberTitle', 'off')
 
     % tables
-    if verLessThan('matlab','9.4')
+    if verLessThanOctave
         SCN = S.Properties.VariableNames;
         S   = table2cell(S); 
-        S{3}= datestr(S{3},'yyyy-mm-dd');
         TCN = T.Properties.VariableNames;
         T   = cellfun(@char,table2cell(T),'uni',0);
     end
@@ -932,7 +931,7 @@ if bids
     TT = uitable(hf,'Data',T);
     TSpos = [20 hf.Position(4)-110 hf.Position(3)-160 90];
     TTpos = [20 20 hf.Position(3)-160 hf.Position(4)-120];
-    if verLessThan('matlab','9.4')
+    if verLessThanOctave
         setpixelposition(TS,TSpos);
         set(TS,'Units','Normalized')
         setpixelposition(TT,TTpos);
@@ -942,7 +941,7 @@ if bids
         TT.Position = TTpos;
     end
     TS.ColumnEditable = [true true true true];
-    if verLessThan('matlab','9.4')
+    if verLessThanOctave
         TS.ColumnName = SCN;
         TT.ColumnName = TCN;
     end
@@ -953,7 +952,7 @@ if bids
     % button
    	Bpos = [hf.Position(3)-120 20 100 30];
     BCB  = @(btn,event) BtnModalityTable(hf,TT, TS);
-    if verLessThan('matlab','9.4')
+    if verLessThanOctave
         B = uicontrol(hf,'Style','pushbutton','String','OK');
         set(B,'Callback',BCB);
         setpixelposition(B,Bpos)
@@ -967,19 +966,10 @@ if bids
     % preview panel
     axesArgs = {hf,'Position',[hf.Position(3)-120 70 100 hf.Position(4)-90],...
                    'Colormap',gray(64)};
-    if verLessThan('matlab','9.4')
-        ax = imagesc(dicm_img(h{1}{1}));
-        ax = ax.Parent;
-        setpixelposition(ax,axesArgs{3})
-        colormap(ax,axesArgs{5})
-    else
-        ax = uiaxes(axesArgs{:});
-    end
-    previewDicom(ax,h{1});
-    axis(ax,'off');
+    ax = previewDicom([],h{1},axesArgs);
     ax.YTickLabel = [];
     ax.XTickLabel = [];
-    TT.CellSelectionCallback = @(src,event) previewDicom(ax,h{event.Indices(1)});
+    TT.CellSelectionCallback = @(src,event) previewDicom(ax,h{event.Indices(1)},axesArgs);
     
     waitfor(hf);
     if getappdata(0,'Canceldicm2nii')
@@ -999,7 +989,7 @@ if bids
             ModalityTablePref.Type(match) = ModalityTableSavePref{imod,2};
             ModalityTablePref.Modality(match) = ModalityTableSavePref{imod,3};
         else % append new pref
-            ModalityTablePref = [ModalityTablePref;ModalityTableSavePref(end,:)];
+            ModalityTablePref = [ModalityTablePref;ModalityTableSavePref(imod,:)];
         end
     end
     setpref('dicm2nii_gui_para', 'ModalityTable', ModalityTablePref);
@@ -1026,20 +1016,40 @@ for i = 1:nRun
         
         % filename
         fnames{i} = fullfile(modalityfolder,...
-                      ['sub-' char(SubjectTable{1,1}) '_' ses '_' char(ModalityTable{i,3})]);
+              ['sub-' char(SubjectTable{1,1}) '_' ses '_' char(ModalityTable{i,3})]);
         fnames{i} = strrep(fnames{i},'__','_');
                 
         % _session.tsv
-        tsvfile = fullfile(niiFolder, ['sub-' char(SubjectTable{1,1})],['sub-' char(SubjectTable{1,1}) '_sessions.tsv']);
-        if verLessThan('matlab','9.4')
-            write_tsv(session_id,tsvfile,'acq_time',datestr(SubjectTable{3},'yyyy-mm-dd'),'Comment',SubjectTable{4})
-        else
-            write_tsv(session_id,tsvfile,'acq_time',datestr(SubjectTable.AcquisitionDate,'yyyy-mm-dd'),'Comment',SubjectTable.Comment)
+        try
+            tsvfile = fullfile(niiFolder, ['sub-' char(SubjectTable{1,1})],['sub-' char(SubjectTable{1,1}) '_sessions.tsv']);
+            if verLessThanOctave
+                write_tsv(session_id,tsvfile,'acq_time',SubjectTable{3},'Comment',SubjectTable{4})
+            else
+                write_tsv(session_id,tsvfile,'acq_time',datestr(SubjectTable.AcquisitionDate,'yyyy-mm-dd'),'Comment',SubjectTable.Comment)
+            end
+        catch 
+            warning(['Could not save sub-' char(SubjectTable{1,1}) '_sessions.tsv']);
+        end
+        
+        % participants.tsv
+        if i==1 % same participant for all Run
+            try
+                tsvfile = fullfile(niiFolder, 'participants.tsv');
+                participant_id = SubjectTable{1,1};
+                Sex                    = tryGetField(h{i}{1}, 'PatientSex');
+                Age                    = tryGetField(h{i}{1}, 'PatientAge');
+                if ischar(Age), Age = sscanf(Age, '%f'); end
+                Size                   = tryGetField(h{i}{1}, 'PatientSize');
+                Weight                 = tryGetField(h{i}{1}, 'PatientWeight');
+                write_tsv(participant_id,tsvfile,'Age',Age,'Sex',Sex,'Weight',Weight,'Size',Size)
+            catch
+                warning('Could not save participants.tsv');
+            end
         end
     end
     
     nFile = numel(h{i});
-    h{i}{1}.NiftiName = fnames{i}; % for convenience of error info
+    h{i}{1}.NiftiName = fnames{i};
     s = h{i}{1};
     if nFile>1 && ~isfield(s, 'LastFile')
         h{i}{1}.LastFile = h{i}{nFile}; % store partial last header into 1st
@@ -1095,7 +1105,7 @@ for i = 1:nRun
     
     h{i}{1}.ConversionSoftware = converter;
     nii = nii_tool('init', img); % create nii struct based on img
-    [nii, h{i}] = set_nii_hdr(nii, h{i}, pf); % set most nii hdr
+    [nii, h{i}] = set_nii_hdr(nii, h{i}, pf, bids); % set most nii hdr
 
     % Save bval and bvec files after bvec perm/sign adjusted in set_nii_hdr
     fname = fullfile(niiFolder,fnames{i}); % name without ext
@@ -1122,7 +1132,7 @@ for i = 1:nRun
     if isfield(nii(1).hdr, 'hdrTilt')
         nii = nii_xform(nii(1), nii.hdr.hdrTilt);
         fprintf(fmtStr, [fnames{i} '_Tilt'], nii.hdr.dim(2:5));
-        nii_tool('save', nii, fullfile(fname, ['_Tilt' ext]), rst3D); % save xformed nii
+        nii_tool('save', nii, [fname '_Tilt' ext], rst3D); % save xformed nii
     end
     
     h{i} = h{i}{1}; % keep 1st dicm header only
@@ -1130,12 +1140,18 @@ for i = 1:nRun
 end
 
 if ~bids
+    try % since 2014a 
+        fnames = matlab.lang.makeValidName(fnames);
+        fnames = matlab.lang.makeUniqueStrings(fnames, {}, namelengthmax);
+    catch
+        fnames = genvarname(fnames);
+    end
     h = cell2struct(h, fnames, 2); % convert into struct
     fname = [niiFolder 'dcmHeaders.mat'];
     if exist(fname, 'file') % if file exists, we update fields only
         S = load(fname);
         for i = 1:numel(fnames), S.h.(fnames{i}) = h.(fnames{i}); end
-        h = S.h; %#ok
+        h = S.h;
     end
     save(fname, 'h', '-v7'); % -v7 better compatibility
 else
@@ -1150,11 +1166,11 @@ function subj = PatientName(s)
 subj = tryGetField(s, 'PatientName');
 if isempty(subj), subj = tryGetField(s, 'PatientID', 'Anonymous'); end
 
-%% Subfunction: return PatientName
+%% Subfunction: return AcquisitionDate
 function acq = AcquisitionDateField(s)
 acq = tryGetField(s, 'AcquisitionDate');
-if isempty(acq), acq = tryGetField(s, 'SeriesDate', []); end
-if isempty(acq), acq = tryGetField(s, 'StudyDate', []); end
+if isempty(acq), acq = tryGetField(s, 'SeriesDate', ''); end
+if isempty(acq), acq = tryGetField(s, 'StudyDate' , ''); end
 
 %% Subfunction: return SeriesDescription
 function name = ProtocolName(s)
@@ -1163,6 +1179,7 @@ if isempty(name) || (strncmp(s.Manufacturer, 'SIEMENS', 7) && any(regexp(name, '
     name = tryGetField(s, 'ProtocolName');
 end
 if isempty(name), [~, name] = fileparts(s.Filename); end
+name = strtrim(name);
 
 %% Subfunction: return true if keyword is in s.ImageType
 function tf = isType(s, keyword)
@@ -1182,6 +1199,8 @@ elseif strncmpi(s.Manufacturer, 'Philips', 7)
     tf = strcmp(tryGetField(s, 'MRSeriesDiffusion', 'N'), 'Y');
 elseif isfield(s, 'ApplicationCategory') % UIH
     tf = ~isempty(regexp(s.ApplicationCategory, 'DTI', 'once'));
+elseif isfield(s, 'AcquisitionContrast') % Bruker    
+    tf = ~isempty(regexpi(s.AcquisitionContrast, 'DIFF', 'once'));
 else % Some Siemens DTI are not labeled as \DIFFUSION
     tf = ~isempty(csa_header(s, 'B_value'));
 end
@@ -1199,7 +1218,7 @@ else, val = [];
 end
 
 %% Subfunction: Set most nii header and re-orient img
-function [nii, h] = set_nii_hdr(nii, h, pf)
+function [nii, h] = set_nii_hdr(nii, h, pf, bids)
 dim = nii.hdr.dim(2:4); nVol = nii.hdr.dim(5);
 fld = 'NumberOfTemporalPositions';
 if ~isfield(h{1}, fld) && nVol>1, h{1}.(fld) = nVol; end
@@ -1252,6 +1271,18 @@ end
 [h, nii.hdr] = sliceTiming(h, nii.hdr);
 nii.hdr.xyzt_units = xyz_unit + nii.hdr.xyzt_units; % normally: mm (2) + sec (8)
 s = h{1};
+
+% set TaskName if present in filename (using bids labels convention)
+if isfield(s,'NiftiName')
+    [~,fname] = fileparts(s.NiftiName);
+    
+    % parse filename
+    labels = regexp(fname,'(?<task>_task-[a-zA-Z0-9]+)?','names'); % task-<label>
+    
+    if ~isempty(labels)
+        s.TaskName = strrep(labels.task,'_task-','');
+    end
+end
 
 % Store motion parameters for MoCo series
 if all(isfield(s, {'RBMoCoTrans' 'RBMoCoRot'})) && nVol>1
@@ -1409,13 +1440,6 @@ if ~strcmp(tryGetField(s, 'MRAcquisitionType'), '3D') && ~isempty(iPhase)
         hz = csa_header(s, 'BandwidthPerPixelPhaseEncode');
         dwell = 1000 ./ hz / dim(iPhase); % in ms
     end
-    if isempty(dwell) % true for syngo MR 2004A
-        % ppf = [1 2 4 8 16] represent [4 5 6 7 8] 8ths PartialFourier
-        % ppf = asc_header(s, 'sKSpace.ucPhasePartialFourier');
-        lns = asc_header(s, 'sKSpace.lPhaseEncodingLines');
-        dur = csa_header(s, 'SliceMeasurementDuration');
-        dwell = dur ./ lns; % ./ (log2(ppf)+4) * 8;
-    end
     if isempty(dwell) % next is not accurate, so as last resort
         dur = csa_header(s, 'RealDwellTime') * 1e-6; % ns to ms
         dwell = dur * asc_header(s, 'sKSpace.lBaseResolution');
@@ -1490,7 +1514,7 @@ h{1} = s;
 
 flds = { % store for nii.ext and json
   'ConversionSoftware' 'SeriesNumber' 'SeriesDescription' 'ImageType' 'Modality' ...
-  'AcquisitionDateTime' 'bval' 'bvec' 'VolumeTiming' ...
+  'AcquisitionDateTime' 'TaskName' 'bval' 'bvec' 'VolumeTiming' ...
   'ReadoutSeconds' 'DelayTimeInTR' 'SliceTiming' 'RepetitionTime' ...
   'UnwarpDirection' 'EffectiveEPIEchoSpacing' 'EchoTime' 'deltaTE' 'EchoTimes' ...
   'SecondEchoTime' 'InversionTime' 'CardiacTriggerDelayTimes' ...
@@ -1501,6 +1525,13 @@ flds = { % store for nii.ext and json
   'ScanningSequence' 'SequenceVariant' 'ScanOptions' 'SequenceName' ...
   'TableHeight' 'DistanceSourceToPatient' 'DistanceSourceToDetector'};
 if ~pf.save_patientName, flds(strcmp(flds, 'PatientName')) = []; end
+if bids
+    flds(strcmp(flds, 'PatientName')) = [];
+    flds(strcmp(flds, 'PatientSex')) = [];
+    flds(strcmp(flds, 'PatientAge')) = [];
+    flds(strcmp(flds, 'PatientSize')) = [];
+    flds(strcmp(flds, 'PatientWeight')) = [];
+end
 for i = 1:numel(flds)
     if ~isfield(s, flds{i}), continue; end
     nii.json.(flds{i}) = s.(flds{i});
@@ -1589,30 +1620,33 @@ if isempty(t) && isfield(s, 'ProtocolDataBlock') && ...
 end
 
 % Siemens multiframe: read TimeAfterStart from last file
-if isempty(t) && strncmpi(s.Manufacturer, 'SIEMENS', 7)
+if isempty(t) && tryGetField(s, 'NumberOfFrames', 1)>1 &&  ...
+        ~isempty(csa_header(s, 'TimeAfterStart'))
     % Use TimeAfterStart, not FrameAcquisitionDatetime. See
     % https://github.com/rordenlab/dcm2niix/issues/240#issuecomment-433036901
-    try 
-        s.PerFrameFunctionalGroupsSequence.Item_1.CSAImageHeaderInfo.Item_1.TimeAfterStart;
-        % s2 = struct('FrameAcquisitionDatetime', {cell(nSL,1)});
-        % s2 = dicm_hdr(h{end}, s2, 1:nSL); % avoid 1st volume
-        % t = datenum(s2.FrameAcquisitionDatetime, 'yyyymmddHHMMSS.fff');
-        % t = (t - min(t)) * 24 * 3600 * 1000; % day to ms
-        s2 = struct('TimeAfterStart', nan(1, nSL));
-        s2 = dicm_hdr(h{end}, s2, 1:nSL); % avoid 1st volume
-        t = s2.TimeAfterStart; % in secs
-        t = (t - min(t)) * 1000;
-    end
+    % s2 = struct('FrameAcquisitionDatetime', {cell(nSL,1)});
+    % s2 = dicm_hdr(h{end}, s2, 1:nSL); % avoid 1st volume
+    % t = datenum(s2.FrameAcquisitionDatetime, 'yyyymmddHHMMSS.fff');
+    % t = (t - min(t)) * 24 * 3600 * 1000; % day to ms
+    s2 = struct('TimeAfterStart', nan(1, nSL));
+    s2 = dicm_hdr(h{end}, s2, 1:nSL); % avoid 1st volume
+    t = s2.TimeAfterStart; % in secs
+    t = (t - min(t)) * 1000;
 end
 
 % Get slice timing for non-mosaic Siemens file. Could remove Manufacturer
 % check, but GE/Philips AcquisitionTime seems useless
 if isempty(t) && ~tryGetField(s, 'isMos', 0) && strncmpi(s.Manufacturer, 'SIEMENS', 7)
-    dict = dicm_dict('', {'AcquisitionDate' 'AcquisitionTime'});
+    dict = dicm_dict('', {'AcquisitionDateTime' 'AcquisitionDate' 'AcquisitionTime'});
     t = zeros(nSL, 1);
     for j = 1:nSL
         s1 = dicm_hdr(h{j}.Filename, dict);
-        str = [s1.AcquisitionDate s1.AcquisitionTime];
+        try str = s1.AcquisitionDateTime;
+        catch
+            try str = [s1.AcquisitionDate s1.AcquisitionTime];
+            catch, t = []; break;
+            end
+        end
         t(j) = datenum(str, 'yyyymmddHHMMSS.fff');
     end
     t = (t - min(t)) * 24 * 3600 * 1000; % day to ms
@@ -1636,12 +1670,10 @@ if numel(t)<2, return; end
 t = t - min(t); % it may be relative to 1st slice
 
 t1 = sort(t);
-dur = sum(diff(t1)) / (nSL-1);
-dif = sum(diff(t))  / (nSL-1);
-if dur==0 || (t1(end)>TA), sc = 0; % no useful info, or bad timing MB
+if t1(1)==t1(2) || (t1(end)>TA), sc = 0; % no useful info, or bad timing MB
 elseif t1(1) == t1(2), sc = 0; t1 = unique(t1); % was 7 for MB but error in FS
-elseif abs(dif-dur)<1e-3, sc = 1; % ascending
-elseif abs(dif+dur)<1e-3, sc = 2; % descending
+elseif isequal(t, t1), sc = 1; % ascending
+elseif isequal(t, flip(t1)), sc = 2; % descending
 elseif t(1)<t(3) % ascending interleaved
     if t(1)<t(2), sc = 3; % odd slices first
     else, sc = 5; % Siemens even number of slices
@@ -1665,50 +1697,90 @@ if nDir<2, return; end
 bval = nan(nDir, 1);
 bvec = nan(nDir, 3);
 s = h{1};
+ref = 1; % not coded by Manufacturer, but by how we get bvec (since 190213).
+% With this method, the code will get correct ref if bvec ref scheme changes 
+% some day, e.g. if GE saves (0018,9089) in the future.
+% ref = 0: IMG, UIH for now;
+% ref = 1: PCS, Siemens/Philips or unknown vendor, this is default
+% ref = 2: FPS, Bruker for now (need to verify)
+% ref = 3: FPS_GE, confusing signs
+%  Since some dicom do not save bval or bvec for bval=0 case, it is better to
+%  loop all directions to detect 'ref'.
 
 nSL = nii.hdr.dim(4);
 nFile =  numel(h);
 if isfield(s, 'bvec_original') % from BV or PAR file
     bval = s.B_value;
     bvec = s.bvec_original;
+    % ref = tryGetField(s, 'bvec_ref', 1); % not implemented yet
 elseif isfield(s, 'PerFrameFunctionalGroupsSequence')
-    if nFile== 1 % all vol in 1 file, for Philips
+    if nFile== 1 % all vol in 1 file, for Philips/Bruker
         iDir = 1:nSL:nSL*nDir;
         if isfield(s, 'SortFrames'), iDir = s.SortFrames(iDir); end
-        s2 = struct('B_value', bval', 'DiffusionGradientDirection', bvec');
+        s2 = struct('B_value', bval', 'DiffusionGradientDirection', bvec', ...
+            'MRDiffusionGradOrientation', bvec');
         s2 = dicm_hdr(s, s2, iDir); % call search_MF_val
         bval = s2.B_value';
         bvec = s2.DiffusionGradientDirection';
-    else % 1 vol per file, e.g. Siemens
-        for i = 1:nFile
-            bval(i) = MF_val('B_value', h{i}, 1);
-            bvec(i,:) = MF_val('DiffusionGradientDirection', h{i}, 1);
+        if all(isnan(bvec(:)))
+            bvec = s2.MRDiffusionGradOrientation';
+            if ~all(isnan(bvec(:))), ref = 0; end % UIH
         end
+        if isfield(s, 'Private_0177_1100') && all(isnan(bvec(:))) % Bruker
+            str = char(s.Private_0177_1100');
+            expr = 'DwGradVec\s*=\s*\(\s*(\d+),\s*(\d+)\s*\)\s+'; % DwDir incomplete            
+            [C, ind] = regexp(str, expr, 'tokens', 'end', 'once');
+            if isequal(str2double(C), [nDir 3])
+                ref = 2;
+                bvec = sscanf(str(ind:end), '%f', nDir*3);
+                bvec = normc(reshape(bvec, 3, []))';
+                [~, i] = sort(iDir); bvec(i,:) = bvec;
+            end
+        end
+    elseif nDir == nFile % 1 vol per file, e.g. Siemens/UIH
+        for i = 1:nDir
+            bval(i) = MF_val('B_value', h{i}, 1);
+            a = MF_val('DiffusionGradientDirection', h{i}, 1);
+            if isempty(a)
+                a = MF_val('MRDiffusionGradOrientation', h{i}, 1);
+                if ~isempty(a), ref = 0; end % UIH
+            end
+            if ~isempty(a), bvec(i,:) = a; end
+        end
+    else
+        errorLog('Number of files and diffusion directions not match');
+        return;
     end
 elseif nFile>1 % multiple files: order already in slices then volumes
     dict = dicm_dict(s.Manufacturer, {'B_value' 'B_factor' 'SlopInt_6_9' ...
-       'DiffusionDirectionX' 'DiffusionDirectionY' 'DiffusionDirectionZ'});
-    iDir = (0:nDir-1) * nFile/nDir + 1; % could be mosaic 
+       'DiffusionDirectionX' 'DiffusionDirectionY' 'DiffusionDirectionZ' ...
+       'MRDiffusionGradOrientation'});
+    iDir = (0:nDir-1) * nFile/nDir + 1; % could be mosaic or multiframe
     for j = 1:nDir % no bval/bvec for B0 volume
         s2 = h{iDir(j)};
         val = tryGetField(s2, 'B_value');
         if val == 0, continue; end
-        vec = tryGetField(s2, 'DiffusionGradientDirection'); % Siemens/Philips/UIH
-        if isempty(val) || isempty(vec) % likely GE
+        vec = tryGetField(s2, 'DiffusionGradientDirection'); % Siemens/Philips
+        if isempty(val) || isempty(vec) % GE/UIH
             s2 = dicm_hdr(s2.Filename, dict);
         end
         
         if isempty(val), val = tryGetField(s2, 'B_factor'); end % old Philips
         if isempty(val) && isfield(s2, 'SlopInt_6_9') % GE
-            val = s2.SlopInt_6_9(1);
+            val = mod(s2.SlopInt_6_9(1), 100000);
         end
         if isempty(val), val = 0; end % may be B_value=0
         bval(j) = val;
         
+        if isempty(vec)
+            vec = tryGetField(s2, 'MRDiffusionGradOrientation');
+            if ref==1 && ~isempty(vec), ref = 0; end % UIH
+        end
         if isempty(vec) % GE, old Philips
             vec(1) = tryGetField(s2, 'DiffusionDirectionX', 0);
             vec(2) = tryGetField(s2, 'DiffusionDirectionY', 0);
             vec(3) = tryGetField(s2, 'DiffusionDirectionZ', 0);
+            if ref==1 && strncmpi(s.Manufacturer, 'GE', 2), ref = 3; end
         end
         bvec(j,:) = vec;
     end
@@ -1736,11 +1808,16 @@ h{1}.bvec_original = bvec; % original from dicom
 
 % http://wiki.na-mic.org/Wiki/index.php/NAMIC_Wiki:DTI:DICOM_for_DWI_and_DTI
 [ixyz, R] = xform_mat(s, nii.hdr.dim(2:4)); % R takes care of slice dir
-if strncmpi(s.Manufacturer, 'UIH', 3) % UIH dicom in image reference
-    % assume real image reference: unlike confusing GE scheme
-elseif strncmpi(s.Manufacturer, 'GE', 2) % GE bvec already in image reference
+if ref == 1 % PCS: Siemens/Philips
+    R = normc(R(:, 1:3));
+    bvec = bvec * R; % dicom plane to image plane
+elseif ref == 2 % FPS: Bruker in Freq/Phase/Slice reference
     if strcmp(tryGetField(s, 'InPlanePhaseEncodingDirection'), 'ROW')
-        bvec = bvec(:, [2 1 3]); % dicom bvec in Freq/Phase/Slice order
+        bvec = bvec(:, [2 1 3]);
+    end
+elseif ref == 3 % FPS: GE in Freq/Phase/Slice reference
+    if strcmp(tryGetField(s, 'InPlanePhaseEncodingDirection'), 'ROW')
+        bvec = bvec(:, [2 1 3]);
         bvec(:, 2) = -bvec(:, 2); % because of transpose?
         if ixyz(3)<3
             errorLog(sprintf(['%s: bvec sign for non-axial acquisition with' ...
@@ -1752,15 +1829,12 @@ elseif strncmpi(s.Manufacturer, 'GE', 2) % GE bvec already in image reference
     flp(3) = ~flp(3); % GE slice dir opposite to LPS for all sag/cor/tra
     if ixyz(3)==1, flp(1) = ~flp(1); end % Sag slice: don't know why
     bvec(:, flp) = -bvec(:, flp);
-else % Siemens/Philips
-    R = normc(R(:, 1:3));
-    bvec = bvec * R; % dicom plane to image plane
 end
 
 % bval may need to be scaled by norm(bvec)
 % https://mrtrix.readthedocs.io/en/latest/concepts/dw_scheme.html
 nm = sum(bvec .^ 2, 2);
-if any(nm>1e-4 & nm<0.999) % this check may not be necessary
+if any(nm>0.01 & abs(nm-1)>0.01) % this check may not be necessary
     h{1}.bval_original = bval; % before scaling
     bval = bval .* nm;
     nm(nm<1e-4) = 1; % remove zeros after correcting bval
@@ -1775,11 +1849,11 @@ function save_dti_para(s, fname)
 if ~isfield(s, 'bvec') || all(s.bvec(:)==0), return; end
 if isfield(s, 'bval')
     fid = fopen([fname '.bval'], 'w');
-    fprintf(fid, '%.5g\t', s.bval); % one row
+    fprintf(fid, '%.5g ', s.bval); % one row
     fclose(fid);
 end
 
-str = repmat('%9.6f\t', 1, size(s.bvec,1));
+str = repmat('%.6f ', 1, size(s.bvec,1));
 fid = fopen([fname '.bvec'], 'w');
 fprintf(fid, [str '\n'], s.bvec); % 3 rows by # direction cols
 fclose(fid);
@@ -1789,6 +1863,8 @@ function val = csa_header(s, key)
 val = [];
 fld = 'CSAImageHeaderInfo';
 if isfield(s, fld) && isfield(s.(fld), key), val = s.(fld).(key); return; end
+if isfield(s, key), val = s.(key); return; end % general tag: 2nd choice
+try val = s.PerFrameFunctionalGroupsSequence.Item_1.(fld).Item_1.(key); return; end
 fld = 'CSASeriesHeaderInfo';
 if isfield(s, fld) && isfield(s.(fld), key), val = s.(fld).(key); return; end
 
@@ -1854,7 +1930,6 @@ if haveIPP, ipp = s.ImagePositionPatient; else, ipp = -(dim'.* pixdim)/2; end
 % Next is almost dicom xform matrix, except mosaic trans and unsure slice_dir
 R = [R * diag(pixdim) ipp];
 
-% rest are former: R = verify_slice_dir(R, s, dim, iSL)
 if dim(3)<2, return; end % don't care direction for single slice
 
 if s.Columns>dim(1) && ~strncmpi(s.Manufacturer, 'UIH', 3) % Siemens mosaic
@@ -1907,6 +1982,9 @@ end
 function val = asc_header(s, key)
 val = []; 
 csa = 'CSASeriesHeaderInfo';
+if ~isfield(s, csa) % in case of multiframe
+    try s.(csa) = s.SharedFunctionalGroupsSequence.Item_1.(csa).Item_1; end
+end
 if ~isfield(s, csa), return; end
 if isfield(s.(csa), 'MrPhoenixProtocol')
     str = s.(csa).MrPhoenixProtocol;
@@ -1965,7 +2043,7 @@ switch cmd
         end
         rstFmt = (get(hs.rstFmt, 'Value') - 1) * 2; % 0 or 2
         if rstFmt == 4
-            if verLessThan('matlab','9.4')
+            if verLessThanOctave
                 fprintf('BIDS conversion is easier with MATLAB R2018a or more.\n');
             end
             if get(hs.gzip,  'Value')
@@ -2128,6 +2206,7 @@ uicontrol('Style', 'Pushbutton', 'Position', [6 235 112 24], ...
     'TooltipString', str, 'Callback', cb('srcDir'));
 
 jSrc = javaObjectEDT('javax.swing.JTextField');
+warning('off', 'MATLAB:ui:javacomponent:FunctionToBeRemoved');
 hs.src = javacomponent(jSrc, [118 234 294 24], fh);
 hs.src.FocusLostCallback = cb('set_src');
 hs.src.Text = getpf('src', pwd);
@@ -2151,7 +2230,8 @@ hs.dst.ToolTipText = ['<html>This is the result folder name. You can<br>' ...
 
 uitxt('Output format', [8 166 82 16]);
 hs.rstFmt = uicontrol('Style', 'popup', 'Background', 'white', 'FontSize', fSz, ...
-    'Value', getpf('rstFmt',1), 'Position', [92 162 82 24], 'String', {' .nii' ' .hdr/.img' ' BIDS (http://bids.neuroimaging.io)'}, ...
+    'Value', getpf('rstFmt',1), 'Position', [92 162 82 24], ...
+    'String', {' .nii' ' .hdr/.img' ' BIDS (http://bids.neuroimaging.io)'}, ...
     'TooltipString', 'Choose output file format');
 
 hs.gzip = chkbox(fh, getpf('gzip',true), 'Compress', '', 'Compress into .gz files');
@@ -2250,6 +2330,12 @@ else
         try d = s.Stack.Item_1.MRStackPreparationDirection(1); catch, return; end
     elseif isfield(s, 'PEDirectionDisplayed') % UIH
         try d = s.PEDirectionDisplayed(1); catch, return; end
+    elseif isfield(s, 'Private_0177_1100') % Bruker
+        expr ='(?<=\<\+?)[LRAPSI]{1}(?=;\s*phase\>)'; % <+P;phase> or <P;phase>  
+        d = regexp(char(s.Private_0177_1100'), expr, 'match', 'once');
+        id = regexp('LRAPSI', d);
+        id = id + mod(id,2)*2-1;
+        str = 'LRAPFH'; d = str(id);
     else % unknown Manufacturer
         return;
     end
@@ -2285,10 +2371,9 @@ try nFrame = s.NumberOfFrames; catch, nFrame = numel(s.(pffgs).FrameStart); end
 % check slice ordering (Philips often needs SortFrames)
 n = numel(MF_val('DimensionIndexValues', s, 1));
 if n>0 && nFrame>1
-    s2 = struct('InStackPositionNumber', nan(1, nFrame), ...
-                'TemporalPositionIndex', nan(1, nFrame), ...
-                'DimensionIndexValues',  nan(n, nFrame), ...
-                'B_value', zeros(1, nFrame));
+    na = nan(1, nFrame);
+    s2 = struct('InStackPositionNumber', na, 'TemporalPositionIndex', na, ...
+                'DimensionIndexValues', nan(n,nFrame), 'B_value', zeros(1, nFrame));
     s2 = dicm_hdr(s, s2, 1:nFrame);
     if ~isnan(s2.InStackPositionNumber(1))
         SL = s2.InStackPositionNumber';
@@ -2298,7 +2383,8 @@ if n>0 && nFrame>1
         VL = s2.DimensionIndexValues([3:end 1],:)';
     end
     [ind, nSL] = sort_frames([SL s2.B_value'], VL);
-    if ~isequal(ind, 1:nFrame)
+    if isempty(ind), s = []; return; end
+    if ~isequal(ind, 1:nFrame) % && strncmpi(s.Manufacturer, 'Philips', 7)
         if ind(1) ~= 1 || ind(end) ~= nFrame 
             s = dicm_hdr(s.Filename, [], ind([1 end])); % re-read new frames [1 end]
         end
@@ -2327,13 +2413,13 @@ if ~isfield(s, 'EchoTime')
 end
 
 % for Siemens: the redundant copy makes non-Siemens code faster
-if isfield(s.(sfgs).Item_1, 'CSASeriesHeaderInfo')
-    s.CSASeriesHeaderInfo = s.(sfgs).Item_1.CSASeriesHeaderInfo.Item_1;
-end
-fld = 'CSAImageHeaderInfo';
-if isfield(s.(pffgs).Item_1, fld)
-    s.(fld) = s.(pffgs).(sprintf('Item_%g', iF)).(fld).Item_1;
-end
+% if isfield(s.(sfgs).Item_1, 'CSASeriesHeaderInfo')
+%     s.CSASeriesHeaderInfo = s.(sfgs).Item_1.CSASeriesHeaderInfo.Item_1;
+% end
+% fld = 'CSAImageHeaderInfo';
+% if isfield(s.(pffgs).Item_1, fld)
+%     s.(fld) = s.(pffgs).(sprintf('Item_%g', iF)).(fld).Item_1;
+% end
 
 % check ImageOrientationPatient consistency for 1st and last frame only
 if nFrame<2, return; end
@@ -2345,7 +2431,6 @@ val = MF_val(fld, s, iF);
 if ~isempty(val) && isfield(s, fld) && any(abs(val-s.(fld))>1e-4)
     s = []; return; % inconsistent orientation, skip
 end
-
 
 %% subfunction: return value from Shared or PerFrame FunctionalGroupsSequence
 function val = MF_val(fld, s, iFrame)
@@ -2457,14 +2542,14 @@ fseek(fid, 0, -1);
 fprintf(fid, '%s\n', errInfo);
 fclose(fid);
 
-%% Ger version in from file: version yyyy.mm.dd
+%% Get version yyyymmdd from README.md 
 function dStr = getVersion(str)
-dStr = '20130101';
+dStr = '20190209';
 if nargin<1 || isempty(str)
     pth = fileparts(mfilename('fullpath'));
     fname = fullfile(pth, 'README.md');
     if ~exist(fname, 'file'), return; end
-    str = fileread(fullfile(pth, 'README.md'));
+    str = fileread(fname);
 end
 a = regexp(str, 'version\s(\d{4}\.\d{2}\.\d{2})', 'tokens', 'once');
 if ~isempty(a), dStr = a{1}([1:4 6:7 9:10]); end
@@ -2620,7 +2705,7 @@ for i = 1:numel(flds)
         str = sprintf('[%s]', str(1:end-1)); % drop last space
     elseif isnumeric(val) % matrix, like DTI bvec
         fmt = repmat('%.8g ', 1, size(val, 2));
-        str = sprintf([fmt char(10)], val');
+        str = sprintf([fmt char(10)], val'); %#ok
         str = sprintf('[%s]', str(1:end-2)); % drop last space and char(10)
     else % in case of struct etc, skip
         continue;
@@ -2803,8 +2888,8 @@ for i = 1:numel(flds)
         fprintf(fid, '\t],\n');
     elseif isnumeric(val) % matrix
         fprintf(fid, '[\n');
-        fmt = repmat('%.8g ', 1, size(val, 2));
-        fprintf(fid, ['\t\t[' fmt(1:end-1) '],\n'], val');
+        fmt = repmat('%.8g, ', 1, size(val, 2));
+        fprintf(fid, ['\t\t[' fmt(1:end-2) '],\n'], val');
         fseek(fid, -2, 'cof');
         fprintf(fid, '\n\t],\n');
     else % in case of struct etc, skip
@@ -2826,7 +2911,7 @@ try
     str = webread(verLink);
 catch me
     try
-        str = urlread(verLink);
+        str = urlread(verLink); %#ok
     catch
         str = sprintf('%s.\n\nPlease download manually.', me.message);
         errordlg(str, 'Web access error');
@@ -2859,7 +2944,7 @@ catch
     url = 'https://github.com/xiangruili/dicm2nii/archive/master.zip';
     try
         fname = [tmp 'dicm2nii_github.zip'];
-        urlwrite(url, fname);
+        urlwrite(url, fname); %#ok
         unzip(fname, tmp); delete(fname);
         tdir = [tmp 'dicm2nii-master/'];
     catch me
@@ -2966,6 +3051,7 @@ nFrame = size(sl, 1);
 if nSL==nFrame, ind = 1:nSL; ind(sl(:,1)) = ind; return; end % single vol
 nVol = floor(nFrame / nSL);
 badVol = nVol*nSL < nFrame; % incomplete volume
+ic(isnan(ic)) = 0;
 id = zeros(size(ic));
 for i = 1:size(ic,2)
     [~, ~, id(:,i)] = unique(ic(:,i)); % entries to index
@@ -3006,7 +3092,7 @@ if exist('flip', 'builtin')
     y = builtin('flip', varargin{:});
 else
     if nargin<2, varargin{2} = find(size(varargin{1})>1, 1); end
-    y = flipdim(varargin); %#ok
+    y = flipdim(varargin{:}); %#ok
 end
 
 %% return all file names in a folder, including in sub-folders
@@ -3053,11 +3139,13 @@ end
 
 %% 
 function v = normc(M)
-v = bsxfun(@rdivide, M, sqrt(sum(M .* M)));
+vn = sqrt(sum(M .^ 2)); % vn = vecnorm(M);
+vn(vn==0) = 1;
+v = bsxfun(@rdivide, M, vn);
 %%
 
 function BtnModalityTable(h,TT,TS)
-if verLessThan('matlab','9.4')
+if verLessThanOctave
     dat = TT.Data;
 else
     dat = cellfun(@char,table2cell(TT.Data),'uni',0);
@@ -3070,10 +3158,10 @@ setappdata(0,'ModalityTable',TT.Data)
 setappdata(0,'SubjectTable',TS.Data)
 delete(h)
 
-function my_closereq(src,callbackdata)
+function my_closereq(src,~)
 % Close request function 
 % to display a question dialog box
-if verLessThan('matlab','9.4')
+if verLessThanOctave
     selection = questdlg('Cancel Dicom conversion?','Close dicm2nii','OK','Cancel','Cancel');
 else
     selection = uiconfirm(src,'Cancel Dicom conversion?',...
@@ -3087,22 +3175,55 @@ switch selection
         return
 end
 
-function previewDicom(ax,s)
-nSL = double(tryGetField(s{1}, 'LocationsInAcquisition'));
-if isempty(nSL)
-    nSL = length(s);
-end
-if verLessThan('matlab','9.4')
-    axis(ax);
-    imagesc(dicm_img(s{round(nSL/2)}));
+function ax = previewDicom(ax,s,axesArgs)
+
+try
+    nSL = double(tryGetField(s{1}, 'LocationsInAcquisition'));
+    if isempty(nSL)
+        nSL = length(s);
+    end
+    img = dicm_img(s{min(end,round(nSL/2))});
+    img = img(:,:,:,round(end/2));
+
+    if verLessThanOctave
+        if ~isempty(ax)
+            axis(ax);
+        end
+        axnew = imagesc(img);
+        if isempty(ax)
+            ax = axnew.Parent;
+            setpixelposition(ax,axesArgs{3})
+        end
+        colormap(ax,axesArgs{5})
+        ax.YTickLabel = [];
+        ax.XTickLabel = [];
+    else
+        if isempty(ax)
+            ax = uiaxes(axesArgs{:});
+        end
+        imagesc(ax,img);
+    end
     axis(ax,'off');
-    colormap(ax,'gray')
-    ax.YTickLabel = [];
-    ax.XTickLabel = [];
-else
-    imagesc(ax,dicm_img(s{round(nSL/2)}));
+    set(ax,'BackgroundColor',[0 0 0])
+    ax.DataAspectRatio = [s{min(end,round(nSL/2))}.PixelSpacing' 1];
+    
+    infos = {'EchoTime','RepetitionTime','FlipAngle','MRAcquisitionType','Manufacturer','SeriesDescription'};
+    str = {};
+    for ii=1:length(infos)
+        if isfield(s{1},infos{ii})
+            if isnumeric(s{1}.(infos{ii})), frmt = '%s: %g';
+            else, frmt = '%s: %s';
+            end
+            str = [str {sprintf(frmt,infos{ii},s{1}.(infos{ii}))}];
+        end
+    end
+    str = [str {sprintf('%s: %g','Nslices',nSL)}];
+    str = [str {sprintf('%s: %g','Nvol',length(s)/nSL)}];
+    ha = text(ax,0,0,str,'FontSize',10,'Color',[1 1 1]);
+    
+catch err
+    warning(['CANNOT PREVIEW RUN: ' err.message])
 end
-ax.DataAspectRatio = [s{round(nSL/2)}.PixelSpacing' 1];
 
 function showHelp(valueset)
 %%
@@ -3135,3 +3256,7 @@ h = msgbox(msg,'Help on BIDS converter');
 set(findall(h,'Type','Text'),'FontName','FixedWidth');
 Pos = get(h,'Position'); Pos(3) = 450;
 set(h,'Position',Pos)
+
+function val = verLessThanOctave
+isOctave = exist('OCTAVE_VERSION', 'builtin') ~= 0;
+val = isOctave || verLessThan('matlab','9.4');
