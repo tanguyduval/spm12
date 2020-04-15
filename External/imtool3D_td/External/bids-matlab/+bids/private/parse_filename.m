@@ -42,7 +42,7 @@ if nargin == 2
         end
     end
     try
-        p = orderfields(p,['filename','ext','type',fields]);
+        p = orderfields(p,['filename','ext','type',setdiff(fieldnames(p),{'filename','ext','type'})']);
     catch
         warning('Ignoring file "%s" not matching template.',filename);
         p = struct([]);
