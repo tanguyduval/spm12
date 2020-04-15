@@ -39,8 +39,9 @@ if ishandle(overlay)
     print(overlay,fullfile(qcdir,subject,'overlay_img.png'),'-dpng','-r0')
     qcjson(end).overlay_img    = strrep(fullfile(subject,'overlay_img.png'),'\','/');
 elseif exist(overlay,'file') && (strcmp(overlay(max(1,end-3):end),'.nii') || strcmp(overlay(max(1,end-6):end),'.nii.gz'))
-    [overlay_dat, h] = nii_load(overlay);
-    overlay_dat = overlay_dat{end};
+    [imgdat, h] = nii_load([img,{overlay}]);
+    overlay_dat = imgdat{end};
+    imgdat(end) = [];
     overlay_dat = nanmean(overlay_dat,4);
     if ~exist('z','var')
         [~,~,z]=find3d(overlay_dat);
@@ -77,7 +78,9 @@ end
 if ishandle(img)
     print(img,fullfile(qcdir,subject,'bkg_img.png'),'-dpng','-r0')
 elseif exist(img{1},'file')  && (strcmp(img{1}(max(1,end-3):end),'.nii') || strcmp(img{1}(max(1,end-6):end),'.nii.gz'))
-    [imgdat, h] = nii_load(img);
+    if ~exist('imgdat','var')
+        [imgdat, h] = nii_load(img);
+    end
     for iim = 1:length(imgdat)
         tmpimg = imgdat{iim};
         tmpimg = nanmean(tmpimg,4);
