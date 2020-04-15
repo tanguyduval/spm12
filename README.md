@@ -4,7 +4,8 @@ This repository includes the following spm apps:
   * **Quality Control**: includes a module for exporting nifti results as an interactive Html page and an advanced Nifti viewer with ROI tools (for drawing a mask).
 
 ## Documentation
-
+  
+* [ISMRM Abstract](https://github.com/tanguyduval/spm12-apps/raw/master/poster_SPM_ISMRM19_digital.pdf)  
 * [Installation](#install)
 * [Features](#features)
 	- [BIDS parser module: create a participant BIDS pipeline in just a minute](#bids-parser-module)
