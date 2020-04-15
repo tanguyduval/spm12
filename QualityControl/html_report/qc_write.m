@@ -39,7 +39,7 @@ if ishandle(overlay)
     print(overlay,fullfile(qcdir,subject,'overlay_img.png'),'-dpng','-r0')
     qcjson(end).overlay_img    = strrep(fullfile(subject,'overlay_img.png'),'\','/');
 elseif exist(overlay,'file') && (strcmp(overlay(max(1,end-3):end),'.nii') || strcmp(overlay(max(1,end-6):end),'.nii.gz'))
-    [imgdat, h] = nii_load([img,{overlay}]);
+    [imgdat, h] = nii_load([img(:);{overlay}]);
     overlay_dat = imgdat{end};
     imgdat(end) = [];
     overlay_dat = nanmean(overlay_dat,4);
